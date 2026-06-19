@@ -32,6 +32,14 @@ def delete_habit(habit_id):
     conn.close()
     return redirect(url_for("index"))
 
+@app.route("/log/<int:habit_id>", methods=["POST"])
+def log_habit(habit_id):
+    conn = get_connection()
+    conn.execute("INSERT OR IGNORE INTO logs (habit_id) VALUES (?)", (habit_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("index"))
+
 if __name__ == "__main__":
     init_db()
     app.run(debug=True)

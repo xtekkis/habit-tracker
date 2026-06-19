@@ -16,6 +16,9 @@
         {% for habit in habits %}
         <li>
             {{ habit["name"] }}
+            <form action="/log/{{ habit['id'] }}" method="POST" style="display:inline">
+                <button type="submit">Log today</button>
+            </form>
             <a href="/delete/{{ habit['id'] }}">Delete</a>
         </li>
         {% endfor %}
