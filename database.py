@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date, timedelta
 
 DB_NAME = "habits.db"
 
@@ -31,3 +32,28 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+def get_streak(habit_id):
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT logged_date FROM logs WHERE habit_id = ? ORDER BY logged_date DESC",
+        (habit_id,)
+    ).fetchall()
+    conn.close()
+
+    if not rows:
+        return 0
+
+    dates = set(date.fromisoformat(row["logged_date"]) for row in rows)
+    today = date.today()
+    check = today if today in dates else today - timedelta(days=1)
+
+    if check not in dates:
+        return 0
+
+    streak = 0
+    while check in dates:
+        streak += 1
+        check -= timedelta(days=1)
+
+    return streak

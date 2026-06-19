@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection
+from database import init_db, get_connection, get_streak
 
 app = Flask(__name__)
 
@@ -8,7 +8,8 @@ def index():
     conn = get_connection()
     habits = conn.execute("SELECT * FROM habits ORDER BY created_at DESC").fetchall()
     conn.close()
-    return render_template("index.html", habits=habits)
+    streaks = {habit["id"]: get_streak(habit["id"]) for habit in habits}
+    return render_template("index.html", habits=habits, streaks=streaks)
 
 @app.route("/add", methods=["POST"])
 def add_habit():

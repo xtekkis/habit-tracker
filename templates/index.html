@@ -15,7 +15,7 @@
     <ul>
         {% for habit in habits %}
         <li>
-            {{ habit["name"] }}
+            {{ habit["name"] }} — Streak: {{ streaks[habit["id"]] }} day(s)
             <form action="/log/{{ habit['id'] }}" method="POST" style="display:inline">
                 <button type="submit">Log today</button>
             </form>
