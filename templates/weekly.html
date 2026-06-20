@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Weekly Summary — Habit Tracker</title>
+</head>
+<body>
+    <h1>Weekly Summary</h1>
+    <p><a href="/">← Back to habits</a></p>
+
+    {% if summary %}
+    <table>
+        <thead>
+            <tr>
+                <th>Habit</th>
+                <th>Days logged (last 7)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in summary %}
+            <tr>
+                <td>{{ row["name"] }}</td>
+                <td>{{ row["count"] }} / {{ row["out_of"] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No habits yet. <a href="/">Add some!</a></p>
+    {% endif %}
+</body>
+</html>

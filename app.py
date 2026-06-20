@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection, get_streak
+from database import init_db, get_connection, get_streak, get_weekly_summary
 
 app = Flask(__name__)
 
@@ -32,6 +32,11 @@ def delete_habit(habit_id):
     conn.commit()
     conn.close()
     return redirect(url_for("index"))
+
+@app.route("/weekly")
+def weekly_summary():
+    summary = get_weekly_summary()
+    return render_template("weekly.html", summary=summary)
 
 @app.route("/log/<int:habit_id>", methods=["POST"])
 def log_habit(habit_id):
