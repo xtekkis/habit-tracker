@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection, get_streak, get_weekly_summary
+from database import init_db, get_connection, get_streak, get_weekly_summary, get_monthly_summary
 
 app = Flask(__name__)
 
@@ -32,6 +32,11 @@ def delete_habit(habit_id):
     conn.commit()
     conn.close()
     return redirect(url_for("index"))
+
+@app.route("/monthly")
+def monthly_summary():
+    summary = get_monthly_summary()
+    return render_template("monthly.html", summary=summary)
 
 @app.route("/weekly")
 def weekly_summary():
