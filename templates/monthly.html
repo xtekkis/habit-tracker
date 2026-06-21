@@ -1,32 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Monthly Summary — Habit Tracker</title>
-</head>
-<body>
-    <h1>Monthly Summary</h1>
-    <p><a href="/">← Back to habits</a></p>
+{% extends "base.html" %}
+{% block title %}Monthly Summary — Habit Tracker{% endblock %}
 
-    {% if summary %}
-    <table>
-        <thead>
-            <tr>
-                <th>Habit</th>
-                <th>Days logged (this month)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in summary %}
-            <tr>
-                <td>{{ row["name"] }}</td>
-                <td>{{ row["count"] }} / {{ row["out_of"] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>No habits yet. <a href="/">Add some!</a></p>
-    {% endif %}
-</body>
-</html>
+{% block content %}
+<h2>Monthly Summary</h2>
+
+{% if summary %}
+<table>
+    <thead>
+        <tr>
+            <th>Habit</th>
+            <th>Days logged (this month)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in summary %}
+        <tr>
+            <td>{{ row["name"] }}</td>
+            <td>{{ row["count"] }} / {{ row["out_of"] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">No habits yet. <a href="/">Add some!</a></p>
+{% endif %}
+{% endblock %}

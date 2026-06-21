@@ -1,31 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Habit Tracker</title>
-</head>
-<body>
-    <h1>Habit Tracker</h1>
-    <nav>
-        <a href="/weekly">Weekly Summary</a> |
-        <a href="/monthly">Monthly Summary</a>
-    </nav>
+{% extends "base.html" %}
+{% block title %}Habits — Habit Tracker{% endblock %}
 
+{% block content %}
+<section class="add-form">
     <form action="/add" method="POST">
         <input type="text" name="name" placeholder="New habit..." required>
         <button type="submit">Add</button>
     </form>
+</section>
 
-    <ul>
-        {% for habit in habits %}
-        <li>
-            {{ habit["name"] }} — Streak: {{ streaks[habit["id"]] }} day(s)
-            <form action="/log/{{ habit['id'] }}" method="POST" style="display:inline">
+<section class="habit-list">
+    {% for habit in habits %}
+    <div class="habit-card">
+        <div class="habit-info">
+            <span class="habit-name">{{ habit["name"] }}</span>
+            <span class="habit-streak">{{ streaks[habit["id"]] }} day streak</span>
+        </div>
+        <div class="habit-actions">
+            <form action="/log/{{ habit['id'] }}" method="POST">
                 <button type="submit">Log today</button>
             </form>
-            <a href="/delete/{{ habit['id'] }}">Delete</a>
-        </li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+            <a class="delete" href="/delete/{{ habit['id'] }}">Delete</a>
+        </div>
+    </div>
+    {% else %}
+    <p class="empty">No habits yet. Add one above.</p>
+    {% endfor %}
+</section>
+{% endblock %}
