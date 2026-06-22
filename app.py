@@ -5,11 +5,18 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
+    from datetime import date
+    today = date.today().isoformat()
     conn = get_connection()
     habits = conn.execute("SELECT * FROM habits ORDER BY created_at DESC").fetchall()
+    logged_today = set(
+        row["habit_id"] for row in conn.execute(
+            "SELECT habit_id FROM logs WHERE logged_date = ?", (today,)
+        ).fetchall()
+    )
     conn.close()
     streaks = {habit["id"]: get_streak(habit["id"]) for habit in habits}
-    return render_template("index.html", habits=habits, streaks=streaks)
+    return render_template("index.html", habits=habits, streaks=streaks, logged_today=logged_today)
 
 @app.route("/add", methods=["POST"])
 def add_habit():

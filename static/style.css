@@ -134,6 +134,17 @@ button:hover {
     border-color: #3a3d4a;
 }
 
+.habit-card.done {
+    border-color: #22543d;
+    background: #1a2720;
+}
+
+.done-label {
+    color: #48bb78;
+    font-size: 13px;
+    font-weight: 500;
+}
+
 .habit-info {
     display: flex;
     flex-direction: column;

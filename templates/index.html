@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Habits — Habit Tracker{% endblock %}
+{% block title %}Habits - Habit Tracker{% endblock %}
 
 {% block content %}
 <section class="add-form">
@@ -11,15 +11,19 @@
 
 <section class="habit-list">
     {% for habit in habits %}
-    <div class="habit-card">
+    <div class="habit-card {% if habit['id'] in logged_today %}done{% endif %}">
         <div class="habit-info">
             <span class="habit-name">{{ habit["name"] }}</span>
             <span class="habit-streak">{{ streaks[habit["id"]] }} day streak</span>
         </div>
         <div class="habit-actions">
-            <form action="/log/{{ habit['id'] }}" method="POST">
-                <button type="submit">Log today</button>
-            </form>
+            {% if habit["id"] in logged_today %}
+                <span class="done-label">Done</span>
+            {% else %}
+                <form action="/log/{{ habit['id'] }}" method="POST">
+                    <button type="submit">Log today</button>
+                </form>
+            {% endif %}
             <a class="delete" href="/delete/{{ habit['id'] }}">Delete</a>
         </div>
     </div>
