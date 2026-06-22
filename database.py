@@ -33,6 +33,17 @@ def init_db():
     conn.commit()
     conn.close()
 
+def get_weekly_counts():
+    conn = get_connection()
+    today = date.today()
+    week_ago = today - timedelta(days=6)
+    rows = conn.execute(
+        "SELECT habit_id, COUNT(*) as count FROM logs WHERE logged_date BETWEEN ? AND ? GROUP BY habit_id",
+        (week_ago.isoformat(), today.isoformat())
+    ).fetchall()
+    conn.close()
+    return {row["habit_id"]: row["count"] for row in rows}
+
 def get_weekly_summary():
     conn = get_connection()
     today = date.today()

@@ -162,6 +162,33 @@ button:hover {
     font-size: 12px;
 }
 
+.progress-bar {
+    width: 160px;
+    height: 4px;
+    background: #2a2d3a;
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #6366f1;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.habit-card.done .progress-fill {
+    background: #48bb78;
+}
+
+.progress-label {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 3px;
+    display: block;
+}
+
 .habit-actions {
     display: flex;
     align-items: center;

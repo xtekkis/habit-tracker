@@ -15,6 +15,11 @@
         <div class="habit-info">
             <span class="habit-name">{{ habit["name"] }}</span>
             <span class="habit-streak">{{ streaks[habit["id"]] }} day streak</span>
+            {% set count = weekly_counts.get(habit["id"], 0) %}
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ (count / 7 * 100) | int }}%"></div>
+            </div>
+            <span class="progress-label">{{ count }}/7 this week</span>
         </div>
         <div class="habit-actions">
             {% if habit["id"] in logged_today %}

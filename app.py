@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection, get_streak, get_weekly_summary, get_monthly_summary
+from database import init_db, get_connection, get_streak, get_weekly_summary, get_monthly_summary, get_weekly_counts
 
 app = Flask(__name__)
 
@@ -16,7 +16,8 @@ def index():
     )
     conn.close()
     streaks = {habit["id"]: get_streak(habit["id"]) for habit in habits}
-    return render_template("index.html", habits=habits, streaks=streaks, logged_today=logged_today)
+    weekly_counts = get_weekly_counts()
+    return render_template("index.html", habits=habits, streaks=streaks, logged_today=logged_today, weekly_counts=weekly_counts)
 
 @app.route("/add", methods=["POST"])
 def add_habit():
