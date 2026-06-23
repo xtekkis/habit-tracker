@@ -51,6 +51,19 @@ def weekly_summary():
     summary = get_weekly_summary()
     return render_template("weekly.html", summary=summary)
 
+@app.route("/edit/<int:habit_id>", methods=["POST"])
+def edit_habit(habit_id):
+    name = request.form.get("name", "").strip()
+    if name:
+        conn = get_connection()
+        try:
+            conn.execute("UPDATE habits SET name = ? WHERE id = ?", (name, habit_id))
+            conn.commit()
+        except:
+            pass
+        conn.close()
+    return redirect(url_for("index"))
+
 @app.route("/log/<int:habit_id>", methods=["POST"])
 def log_habit(habit_id):
     conn = get_connection()

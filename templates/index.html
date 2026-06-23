@@ -29,6 +29,7 @@
                     <button type="submit">Log today</button>
                 </form>
             {% endif %}
+            <a class="edit-link" href="#" data-id="{{ habit['id'] }}" data-name="{{ habit['name'] }}">Edit</a>
             <a class="delete" href="/delete/{{ habit['id'] }}">Delete</a>
         </div>
     </div>
@@ -36,4 +37,37 @@
     <p class="empty">No habits yet. Add one above.</p>
     {% endfor %}
 </section>
+
+<div class="modal-overlay" id="editModal" onclick="closeEdit(event)">
+    <div class="modal">
+        <h3>Edit habit</h3>
+        <form id="editForm" method="POST">
+            <input type="text" id="editInput" name="name" required>
+            <div class="modal-actions">
+                <button type="submit">Save</button>
+                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.edit-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('editForm').action = '/edit/' + this.dataset.id;
+        document.getElementById('editInput').value = this.dataset.name;
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('editInput').focus();
+    });
+});
+
+function closeModal() {
+    document.getElementById('editModal').classList.remove('active');
+}
+
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+</script>
 {% endblock %}
