@@ -4,16 +4,28 @@
 {% block content %}
 <section class="add-form">
     <form action="/add" method="POST">
-        <input type="text" name="name" placeholder="New habit..." required>
+        <input type="text" name="name" placeholder="New habit..." required maxlength="100">
+        <select name="category_id">
+            <option value="">No category</option>
+            {% for cat in categories %}
+            <option value="{{ cat['id'] }}">{{ cat['name'] }}</option>
+            {% endfor %}
+        </select>
         <button type="submit">Add</button>
     </form>
+    <button type="button" class="btn-secondary" id="openCategoryModal">+ Category</button>
 </section>
 
 <section class="habit-list">
     {% for habit in habits %}
     <div class="habit-card {% if habit['id'] in logged_today %}done{% endif %}">
         <div class="habit-info">
-            <span class="habit-name">{{ habit["name"] }}</span>
+            <div class="habit-name-row">
+                <span class="habit-name">{{ habit["name"] }}</span>
+                {% if habit["category_name"] %}
+                <span class="category-badge">{{ habit["category_name"] }}</span>
+                {% endif %}
+            </div>
             <span class="habit-streak">{{ streaks[habit["id"]] }} day streak</span>
             {% set count = weekly_counts.get(habit["id"], 0) %}
             <div class="progress-bar">
@@ -29,7 +41,10 @@
                     <button type="submit">Log today</button>
                 </form>
             {% endif %}
-            <a class="edit-link" href="#" data-id="{{ habit['id'] }}" data-name="{{ habit['name'] }}">Edit</a>
+            <a class="edit-link" href="#"
+               data-id="{{ habit['id'] }}"
+               data-name="{{ habit['name'] }}"
+               data-category="{{ habit['category_id'] or '' }}">Edit</a>
             <a class="delete" href="/delete/{{ habit['id'] }}">Delete</a>
         </div>
     </div>
@@ -38,36 +53,73 @@
     {% endfor %}
 </section>
 
-<div class="modal-overlay" id="editModal" onclick="closeEdit(event)">
+<!-- Edit habit modal -->
+<div class="modal-overlay" id="editModal">
     <div class="modal">
         <h3>Edit habit</h3>
         <form id="editForm" method="POST">
-            <input type="text" id="editInput" name="name" required>
+            <input type="text" id="editInput" name="name" required maxlength="100">
+            <select name="category_id" id="editCategory">
+                <option value="">No category</option>
+                {% for cat in categories %}
+                <option value="{{ cat['id'] }}">{{ cat['name'] }}</option>
+                {% endfor %}
+            </select>
             <div class="modal-actions">
                 <button type="submit">Save</button>
-                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button type="button" class="btn-cancel" id="closeEditModal">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add category modal -->
+<div class="modal-overlay" id="categoryModal">
+    <div class="modal">
+        <h3>New category</h3>
+        <form action="/category/add" method="POST">
+            <input type="text" name="name" placeholder="Category name..." required maxlength="50">
+            <div class="modal-actions">
+                <button type="submit">Create</button>
+                <button type="button" class="btn-cancel" id="closeCategoryModal">Cancel</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
+// Edit modal
 document.querySelectorAll('.edit-link').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.preventDefault();
         document.getElementById('editForm').action = '/edit/' + this.dataset.id;
         document.getElementById('editInput').value = this.dataset.name;
+        var catSelect = document.getElementById('editCategory');
+        catSelect.value = this.dataset.category || '';
         document.getElementById('editModal').classList.add('active');
         document.getElementById('editInput').focus();
     });
 });
 
-function closeModal() {
+document.getElementById('closeEditModal').addEventListener('click', function() {
     document.getElementById('editModal').classList.remove('active');
-}
+});
 
 document.getElementById('editModal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
+    if (e.target === this) this.classList.remove('active');
+});
+
+// Category modal
+document.getElementById('openCategoryModal').addEventListener('click', function() {
+    document.getElementById('categoryModal').classList.add('active');
+});
+
+document.getElementById('closeCategoryModal').addEventListener('click', function() {
+    document.getElementById('categoryModal').classList.remove('active');
+});
+
+document.getElementById('categoryModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
 });
 </script>
 {% endblock %}

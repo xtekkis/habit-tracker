@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection, get_streak, get_weekly_summary, get_monthly_summary, get_weekly_counts
+from database import init_db, get_connection, get_streak, get_weekly_summary, get_monthly_summary, get_weekly_counts, get_categories
 
 app = Flask(__name__)
 
@@ -8,7 +8,12 @@ def index():
     from datetime import date
     today = date.today().isoformat()
     conn = get_connection()
-    habits = conn.execute("SELECT * FROM habits ORDER BY created_at DESC").fetchall()
+    habits = conn.execute("""
+        SELECT h.*, c.name as category_name
+        FROM habits h
+        LEFT JOIN categories c ON h.category_id = c.id
+        ORDER BY h.created_at DESC
+    """).fetchall()
     logged_today = set(
         row["habit_id"] for row in conn.execute(
             "SELECT habit_id FROM logs WHERE logged_date = ?", (today,)
@@ -17,17 +22,19 @@ def index():
     conn.close()
     streaks = {habit["id"]: get_streak(habit["id"]) for habit in habits}
     weekly_counts = get_weekly_counts()
-    return render_template("index.html", habits=habits, streaks=streaks, logged_today=logged_today, weekly_counts=weekly_counts)
+    categories = get_categories()
+    return render_template("index.html", habits=habits, streaks=streaks, logged_today=logged_today, weekly_counts=weekly_counts, categories=categories)
 
 @app.route("/add", methods=["POST"])
 def add_habit():
-    name = request.form.get("name", "").strip()
+    name = request.form.get("name", "").strip()[:100]
+    category_id = request.form.get("category_id") or None
     if name:
         conn = get_connection()
         try:
-            conn.execute("INSERT INTO habits (name) VALUES (?)", (name,))
+            conn.execute("INSERT INTO habits (name, category_id) VALUES (?, ?)", (name, category_id))
             conn.commit()
-        except:
+        except Exception:
             pass
         conn.close()
     return redirect(url_for("index"))
@@ -53,13 +60,27 @@ def weekly_summary():
 
 @app.route("/edit/<int:habit_id>", methods=["POST"])
 def edit_habit(habit_id):
-    name = request.form.get("name", "").strip()
+    name = request.form.get("name", "").strip()[:100]
+    category_id = request.form.get("category_id") or None
     if name:
         conn = get_connection()
         try:
-            conn.execute("UPDATE habits SET name = ? WHERE id = ?", (name, habit_id))
+            conn.execute("UPDATE habits SET name = ?, category_id = ? WHERE id = ?", (name, category_id, habit_id))
             conn.commit()
-        except:
+        except Exception:
+            pass
+        conn.close()
+    return redirect(url_for("index"))
+
+@app.route("/category/add", methods=["POST"])
+def add_category():
+    name = request.form.get("name", "").strip()[:50]
+    if name:
+        conn = get_connection()
+        try:
+            conn.execute("INSERT INTO categories (name) VALUES (?)", (name,))
+            conn.commit()
+        except Exception:
             pass
         conn.close()
     return redirect(url_for("index"))

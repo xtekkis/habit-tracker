@@ -30,8 +30,27 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            created_at DATE DEFAULT (DATE('now'))
+        )
+    """)
+
+    try:
+        cursor.execute("ALTER TABLE habits ADD COLUMN category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL")
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
+
+def get_categories():
+    conn = get_connection()
+    cats = conn.execute("SELECT * FROM categories ORDER BY name").fetchall()
+    conn.close()
+    return cats
 
 def get_weekly_counts():
     conn = get_connection()
