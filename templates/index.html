@@ -41,14 +41,15 @@
                 <div class="progress-fill" style="width: {{ (count / 7 * 100) | int }}%"></div>
             </div>
             <span class="progress-label">{{ count }}/7 this week</span>
+            {% if todays_notes.get(habit["id"]) %}
+            <span class="todays-note">{{ todays_notes[habit["id"]] }}</span>
+            {% endif %}
         </div>
         <div class="habit-actions">
             {% if habit["id"] in logged_today %}
                 <span class="done-label">Done</span>
             {% else %}
-                <form action="/log/{{ habit['id'] }}" method="POST">
-                    <button type="submit">Log today</button>
-                </form>
+                <button class="log-btn" data-id="{{ habit['id'] }}" data-name="{{ habit['name'] }}">Log today</button>
             {% endif %}
             <a class="edit-link" href="#"
                data-id="{{ habit['id'] }}"
@@ -61,6 +62,20 @@
     <p class="empty">No habits yet. Add one above.</p>
     {% endfor %}
 </section>
+
+<!-- Log habit modal -->
+<div class="modal-overlay" id="logModal">
+    <div class="modal">
+        <h3 id="logModalTitle">Log habit</h3>
+        <form id="logForm" method="POST">
+            <textarea name="notes" id="logNotes" placeholder="Add a note... (optional)" maxlength="500"></textarea>
+            <div class="modal-actions">
+                <button type="submit">Log</button>
+                <button type="button" class="btn-cancel" id="closeLogModal">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <!-- Edit habit modal -->
 <div class="modal-overlay" id="editModal">
@@ -115,6 +130,25 @@ document.getElementById('closeEditModal').addEventListener('click', function() {
 });
 
 document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+});
+
+// Log modal
+document.querySelectorAll('.log-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.getElementById('logForm').action = '/log/' + this.dataset.id;
+        document.getElementById('logModalTitle').textContent = this.dataset.name;
+        document.getElementById('logNotes').value = '';
+        document.getElementById('logModal').classList.add('active');
+        document.getElementById('logNotes').focus();
+    });
+});
+
+document.getElementById('closeLogModal').addEventListener('click', function() {
+    document.getElementById('logModal').classList.remove('active');
+});
+
+document.getElementById('logModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
 });
 

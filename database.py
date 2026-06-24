@@ -43,8 +43,23 @@ def init_db():
     except Exception:
         pass
 
+    try:
+        cursor.execute("ALTER TABLE logs ADD COLUMN notes TEXT")
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
+
+def get_todays_notes():
+    conn = get_connection()
+    today = date.today().isoformat()
+    rows = conn.execute(
+        "SELECT habit_id, notes FROM logs WHERE logged_date = ? AND notes IS NOT NULL AND notes != ''",
+        (today,)
+    ).fetchall()
+    conn.close()
+    return {row["habit_id"]: row["notes"] for row in rows}
 
 def get_categories():
     conn = get_connection()

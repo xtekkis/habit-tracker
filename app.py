@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection, get_streak, get_weekly_summary, get_monthly_summary, get_weekly_counts, get_categories
+from database import init_db, get_connection, get_streak, get_weekly_summary, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes
 
 app = Flask(__name__)
 
@@ -23,7 +23,8 @@ def index():
     streaks = {habit["id"]: get_streak(habit["id"]) for habit in habits}
     weekly_counts = get_weekly_counts()
     categories = get_categories()
-    return render_template("index.html", habits=habits, streaks=streaks, logged_today=logged_today, weekly_counts=weekly_counts, categories=categories)
+    todays_notes = get_todays_notes()
+    return render_template("index.html", habits=habits, streaks=streaks, logged_today=logged_today, weekly_counts=weekly_counts, categories=categories, todays_notes=todays_notes)
 
 @app.route("/add", methods=["POST"])
 def add_habit():
@@ -87,8 +88,12 @@ def add_category():
 
 @app.route("/log/<int:habit_id>", methods=["POST"])
 def log_habit(habit_id):
+    notes = request.form.get("notes", "").strip()[:500]
     conn = get_connection()
-    conn.execute("INSERT OR IGNORE INTO logs (habit_id) VALUES (?)", (habit_id,))
+    conn.execute(
+        "INSERT OR IGNORE INTO logs (habit_id, notes) VALUES (?, ?)",
+        (habit_id, notes or None)
+    )
     conn.commit()
     conn.close()
     return redirect(url_for("index"))
