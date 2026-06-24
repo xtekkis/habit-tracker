@@ -228,6 +228,37 @@ a.delete:hover {
     text-decoration: none;
 }
 
+/* Filter bar */
+
+.filter-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.filter-btn {
+    background: transparent;
+    border: 1px solid #2a2d3a;
+    border-radius: 20px;
+    color: #94a3b8;
+    font-size: 13px;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.filter-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+.filter-btn.active {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+}
+
 /* Modal */
 
 .modal-overlay {

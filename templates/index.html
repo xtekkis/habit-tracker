@@ -16,9 +16,18 @@
     <button type="button" class="btn-secondary" id="openCategoryModal">+ Category</button>
 </section>
 
+{% if categories %}
+<div class="filter-bar">
+    <button class="filter-btn active" data-filter="">All</button>
+    {% for cat in categories %}
+    <button class="filter-btn" data-filter="{{ cat['id'] }}">{{ cat['name'] }}</button>
+    {% endfor %}
+</div>
+{% endif %}
+
 <section class="habit-list">
     {% for habit in habits %}
-    <div class="habit-card {% if habit['id'] in logged_today %}done{% endif %}">
+    <div class="habit-card {% if habit['id'] in logged_today %}done{% endif %}" data-category="{{ habit['category_id'] or '' }}">
         <div class="habit-info">
             <div class="habit-name-row">
                 <span class="habit-name">{{ habit["name"] }}</span>
@@ -107,6 +116,18 @@ document.getElementById('closeEditModal').addEventListener('click', function() {
 
 document.getElementById('editModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
+});
+
+// Category filter
+document.querySelectorAll('.filter-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+        this.classList.add('active');
+        var filter = this.dataset.filter;
+        document.querySelectorAll('.habit-card').forEach(function(card) {
+            card.style.display = (!filter || card.dataset.category === filter) ? '' : 'none';
+        });
+    });
 });
 
 // Category modal
