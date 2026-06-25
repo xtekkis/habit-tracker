@@ -61,6 +61,18 @@ nav a:hover {
     color: #6366f1;
 }
 
+nav a.nav-export {
+    border: 1px solid #2a2d3a;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 13px;
+}
+
+nav a.nav-export:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
 /* Add form */
 
 .add-form {

@@ -133,6 +133,33 @@ def habit_calendar(habit_id):
         today_day=today_day
     )
 
+@app.route("/export/csv")
+def export_csv():
+    import csv
+    import io
+    from flask import Response
+
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT h.name AS habit, l.logged_date AS date, l.notes
+        FROM logs l
+        JOIN habits h ON l.habit_id = h.id
+        ORDER BY h.name, l.logged_date
+    """).fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Habit", "Date", "Notes"])
+    for row in rows:
+        writer.writerow([row["habit"], row["date"], row["notes"] or ""])
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=habits.csv"}
+    )
+
 @app.route("/log/<int:habit_id>", methods=["POST"])
 def log_habit(habit_id):
     notes = request.form.get("notes", "").strip()[:500]
