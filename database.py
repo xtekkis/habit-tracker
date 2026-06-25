@@ -51,6 +51,26 @@ def init_db():
     conn.commit()
     conn.close()
 
+def get_habit(habit_id):
+    conn = get_connection()
+    habit = conn.execute("SELECT * FROM habits WHERE id = ?", (habit_id,)).fetchone()
+    conn.close()
+    return habit
+
+def get_logs_for_month(habit_id, year, month):
+    conn = get_connection()
+    start = f"{year:04d}-{month:02d}-01"
+    if month == 12:
+        end = f"{year+1:04d}-01-01"
+    else:
+        end = f"{year:04d}-{month+1:02d}-01"
+    rows = conn.execute(
+        "SELECT logged_date, notes FROM logs WHERE habit_id = ? AND logged_date >= ? AND logged_date < ?",
+        (habit_id, start, end)
+    ).fetchall()
+    conn.close()
+    return {row["logged_date"]: row["notes"] for row in rows}
+
 def get_todays_notes():
     conn = get_connection()
     today = date.today().isoformat()

@@ -414,6 +414,138 @@ textarea:focus {
     font-style: italic;
 }
 
+/* Calendar link */
+
+a.calendar-link {
+    color: #64748b;
+    font-size: 13px;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+a.calendar-link:hover {
+    color: #6366f1;
+}
+
+/* Calendar page */
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.calendar-header a {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.15s;
+}
+
+.calendar-header a:hover {
+    color: #e2e8f0;
+}
+
+.calendar-header h2 {
+    margin: 0;
+}
+
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.month-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: #f1f5f9;
+    min-width: 130px;
+    text-align: center;
+}
+
+.nav-arrow {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.nav-arrow:hover {
+    color: #f1f5f9;
+    background: #2a2d3a;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.calendar-day-name {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    padding-bottom: 8px;
+}
+
+.calendar-cell {
+    background: #1a1d27;
+    border: 1px solid #2a2d3a;
+    border-radius: 8px;
+    min-height: 64px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.calendar-cell.empty {
+    background: transparent;
+    border-color: transparent;
+}
+
+.calendar-cell.logged {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.35);
+}
+
+.calendar-cell.today {
+    border-color: #6366f1;
+}
+
+.calendar-cell.logged.today {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+.day-number {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.calendar-cell.logged .day-number {
+    color: #a5b4fc;
+}
+
+.day-note {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.3;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
 /* Tables (weekly / monthly) */
 
 table {

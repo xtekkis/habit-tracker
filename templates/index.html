@@ -55,6 +55,7 @@
                data-id="{{ habit['id'] }}"
                data-name="{{ habit['name'] }}"
                data-category="{{ habit['category_id'] or '' }}">Edit</a>
+            <a class="calendar-link" href="/habit/{{ habit['id'] }}/calendar">Calendar</a>
             <a class="delete" href="/delete/{{ habit['id'] }}">Delete</a>
         </div>
     </div>

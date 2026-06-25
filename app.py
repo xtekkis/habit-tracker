@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection, get_streak, get_weekly_summary, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes
+from database import init_db, get_connection, get_streak, get_weekly_summary, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month
 
 app = Flask(__name__)
 
@@ -85,6 +85,53 @@ def add_category():
             pass
         conn.close()
     return redirect(url_for("index"))
+
+@app.route("/habit/<int:habit_id>/calendar")
+def habit_calendar(habit_id):
+    import calendar
+    from datetime import date
+
+    habit = get_habit(habit_id)
+    if not habit:
+        return redirect(url_for("index"))
+
+    today = date.today()
+    month_param = request.args.get("month", f"{today.year:04d}-{today.month:02d}")
+    try:
+        year, month = int(month_param[:4]), int(month_param[5:7])
+        if not (1 <= month <= 12):
+            raise ValueError
+    except (ValueError, IndexError):
+        year, month = today.year, today.month
+
+    logs = get_logs_for_month(habit_id, year, month)
+    weeks = calendar.monthcalendar(year, month)
+    month_name = date(year, month, 1).strftime("%B %Y")
+
+    if month == 1:
+        prev_month = f"{year-1:04d}-12"
+    else:
+        prev_month = f"{year:04d}-{month-1:02d}"
+
+    if month == 12:
+        next_month = f"{year+1:04d}-01"
+    else:
+        next_month = f"{year:04d}-{month+1:02d}"
+
+    is_current = (year == today.year and month == today.month)
+    today_day = today.day if is_current else None
+
+    return render_template("calendar.html",
+        habit=habit,
+        weeks=weeks,
+        logs=logs,
+        month_name=month_name,
+        year=year,
+        month=month,
+        prev_month=prev_month,
+        next_month=next_month,
+        today_day=today_day
+    )
 
 @app.route("/log/<int:habit_id>", methods=["POST"])
 def log_habit(habit_id):
