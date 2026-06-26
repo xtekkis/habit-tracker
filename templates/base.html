@@ -1,10 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="htmlRoot">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Habit Tracker{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme') || 'dark';
+            document.getElementById('htmlRoot').setAttribute('data-theme', theme);
+        })();
+    </script>
 </head>
 <body>
     <div class="container">
@@ -15,11 +21,28 @@
                 <a href="/weekly">Weekly</a>
                 <a href="/monthly">Monthly</a>
                 <a href="/export/csv" class="nav-export">Export CSV</a>
+                <button id="themeToggle" class="theme-toggle"></button>
             </nav>
         </header>
         <main>
             {% block content %}{% endblock %}
         </main>
     </div>
+    <script>
+        var root = document.getElementById('htmlRoot');
+        var toggle = document.getElementById('themeToggle');
+
+        function applyTheme(theme) {
+            root.setAttribute('data-theme', theme);
+            toggle.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
+            localStorage.setItem('theme', theme);
+        }
+
+        applyTheme(localStorage.getItem('theme') || 'dark');
+
+        toggle.addEventListener('click', function() {
+            applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });
+    </script>
 </body>
 </html>

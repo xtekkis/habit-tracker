@@ -1,3 +1,136 @@
+/* Light mode overrides */
+
+html[data-theme="light"] body {
+    background-color: #f8fafc;
+    color: #1e293b;
+}
+
+html[data-theme="light"] header {
+    border-bottom-color: #e2e8f0;
+}
+
+html[data-theme="light"] h1,
+html[data-theme="light"] h2 {
+    color: #0f172a;
+}
+
+html[data-theme="light"] nav a {
+    color: #64748b;
+}
+
+html[data-theme="light"] nav a.nav-export {
+    border-color: #e2e8f0;
+}
+
+html[data-theme="light"] .habit-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+html[data-theme="light"] .habit-card:hover {
+    border-color: #cbd5e1;
+}
+
+html[data-theme="light"] .habit-card.done {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+html[data-theme="light"] .habit-name {
+    color: #0f172a;
+}
+
+html[data-theme="light"] .habit-streak,
+html[data-theme="light"] .progress-label,
+html[data-theme="light"] .todays-note {
+    color: #94a3b8;
+}
+
+html[data-theme="light"] .progress-bar {
+    background: #e2e8f0;
+}
+
+html[data-theme="light"] input[type="text"],
+html[data-theme="light"] select,
+html[data-theme="light"] textarea {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #1e293b;
+}
+
+html[data-theme="light"] input[type="text"]::placeholder,
+html[data-theme="light"] textarea::placeholder {
+    color: #94a3b8;
+}
+
+html[data-theme="light"] .modal {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+html[data-theme="light"] .modal h3 {
+    color: #0f172a;
+}
+
+html[data-theme="light"] .btn-cancel {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+html[data-theme="light"] .btn-cancel:hover {
+    background: #e2e8f0;
+}
+
+html[data-theme="light"] .btn-secondary {
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+html[data-theme="light"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="light"] .filter-btn {
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+html[data-theme="light"] .calendar-cell {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+html[data-theme="light"] .day-number {
+    color: #1e293b;
+}
+
+html[data-theme="light"] .nav-arrow:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+html[data-theme="light"] tbody tr {
+    border-top-color: #e2e8f0;
+}
+
+html[data-theme="light"] tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+html[data-theme="light"] tbody td {
+    color: #1e293b;
+}
+
+html[data-theme="light"] a.delete,
+html[data-theme="light"] a.edit-link,
+html[data-theme="light"] a.calendar-link {
+    color: #94a3b8;
+}
+
+html[data-theme="light"] .empty {
+    color: #94a3b8;
+}
+
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -71,6 +204,28 @@ nav a.nav-export {
 nav a.nav-export:hover {
     border-color: #6366f1;
     color: #6366f1;
+}
+
+.theme-toggle {
+    background: transparent;
+    border: 1px solid #2a2d3a;
+    border-radius: 6px;
+    color: #94a3b8;
+    font-size: 13px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.theme-toggle:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+    background: transparent;
+}
+
+html[data-theme="light"] .theme-toggle {
+    border-color: #e2e8f0;
+    color: #64748b;
 }
 
 /* Add form */
