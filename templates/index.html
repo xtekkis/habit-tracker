@@ -134,6 +134,18 @@ document.getElementById('editModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
 });
 
+// Staggered card entrance
+document.querySelectorAll('.habit-card').forEach(function(card, i) {
+    card.style.animationDelay = (i * 0.07) + 's';
+});
+
+// Progress bar animation
+document.querySelectorAll('.progress-fill').forEach(function(bar) {
+    var target = bar.style.width;
+    bar.style.width = '0';
+    setTimeout(function() { bar.style.width = target; }, 120);
+});
+
 // Log modal
 document.querySelectorAll('.log-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
