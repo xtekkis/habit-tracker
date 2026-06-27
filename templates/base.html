@@ -1,48 +1,55 @@
 <!DOCTYPE html>
-<html lang="en" id="htmlRoot">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Habit Tracker{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="/static/style.css">
-    <script>
-        (function() {
-            var theme = localStorage.getItem('theme') || 'dark';
-            document.getElementById('htmlRoot').setAttribute('data-theme', theme);
-        })();
-    </script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Habit Tracker</h1>
-            <nav>
-                <a href="/">Habits</a>
-                <a href="/weekly">Weekly</a>
-                <a href="/monthly">Monthly</a>
-                <a href="/export/csv" class="nav-export">Export CSV</a>
-                <button id="themeToggle" class="theme-toggle"></button>
-            </nav>
+    <div class="app-shell">
+        <header class="top-bar">
+            <h1 class="app-title">{% block page_title %}Today{% endblock %}</h1>
         </header>
-        <main>
+        <main class="page-content">
             {% block content %}{% endblock %}
         </main>
+        <nav class="tab-bar">
+            <a href="/" class="tab-btn" id="tab-today">
+                <i data-lucide="home"></i>
+                <span>Today</span>
+            </a>
+            <a href="/weekly" class="tab-btn" id="tab-insights">
+                <i data-lucide="bar-chart-2"></i>
+                <span>Insights</span>
+            </a>
+            <button class="tab-fab" id="tab-fab" aria-label="Add habit">
+                <i data-lucide="plus"></i>
+            </button>
+            <a href="#" class="tab-btn tab-disabled" id="tab-calendar">
+                <i data-lucide="calendar"></i>
+                <span>Calendar</span>
+            </a>
+            <a href="#" class="tab-btn tab-disabled" id="tab-settings">
+                <i data-lucide="settings"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
     </div>
     <script>
-        var root = document.getElementById('htmlRoot');
-        var toggle = document.getElementById('themeToggle');
-
-        function applyTheme(theme) {
-            root.setAttribute('data-theme', theme);
-            toggle.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
-            localStorage.setItem('theme', theme);
-        }
-
-        applyTheme(localStorage.getItem('theme') || 'dark');
-
-        toggle.addEventListener('click', function() {
-            applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-        });
+        lucide.createIcons();
+        (function() {
+            var path = window.location.pathname;
+            if (path === '/') {
+                document.getElementById('tab-today').classList.add('active');
+            } else if (path.startsWith('/weekly') || path.startsWith('/monthly')) {
+                document.getElementById('tab-insights').classList.add('active');
+            }
+        })();
     </script>
 </body>
 </html>
