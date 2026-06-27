@@ -3,8 +3,9 @@
 
 {% block content %}
 <section class="add-form">
+    <h2 class="section-heading">Add a habit</h2>
     <form action="/add" method="POST">
-        <input type="text" name="name" placeholder="New habit..." required maxlength="100">
+        <input type="text" name="name" placeholder="e.g. Read for 20 minutes..." required maxlength="100">
         <select name="category_id">
             <option value="">No category</option>
             {% for cat in categories %}
@@ -20,7 +21,9 @@
 <div class="filter-bar">
     <button class="filter-btn active" data-filter="">All</button>
     {% for cat in categories %}
-    <button class="filter-btn" data-filter="{{ cat['id'] }}">{{ cat['name'] }}</button>
+    <span class="filter-pill">
+        <button class="filter-btn" data-filter="{{ cat['id'] }}">{{ cat['name'] }}</button><a class="cat-delete-btn" href="/category/delete/{{ cat['id'] }}" title="Remove category">×</a>
+    </span>
     {% endfor %}
 </div>
 {% endif %}
@@ -56,7 +59,9 @@
                data-name="{{ habit['name'] }}"
                data-category="{{ habit['category_id'] or '' }}">Edit</a>
             <a class="calendar-link" href="/habit/{{ habit['id'] }}/calendar">Calendar</a>
-            <a class="delete" href="/delete/{{ habit['id'] }}">Delete</a>
+            <a class="delete open-delete" href="#"
+               data-id="{{ habit['id'] }}"
+               data-name="{{ habit['name'] }}">Delete</a>
         </div>
     </div>
     {% else %}
@@ -112,6 +117,18 @@
     </div>
 </div>
 
+<!-- Delete habit confirmation modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <h3>Delete habit</h3>
+        <p class="modal-body-text">Delete "<span id="deleteHabitName"></span>"? All logs will also be removed. This can't be undone.</p>
+        <div class="modal-actions">
+            <a id="deleteConfirmLink" href="#" class="btn-danger">Delete</a>
+            <button type="button" class="btn-cancel" id="closeDeleteModal">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script>
 // Edit modal
 document.querySelectorAll('.edit-link').forEach(function(link) {
@@ -162,6 +179,24 @@ document.getElementById('closeLogModal').addEventListener('click', function() {
 });
 
 document.getElementById('logModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+});
+
+// Delete confirmation modal
+document.querySelectorAll('.open-delete').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('deleteHabitName').textContent = this.dataset.name;
+        document.getElementById('deleteConfirmLink').href = '/delete/' + this.dataset.id;
+        document.getElementById('deleteModal').classList.add('active');
+    });
+});
+
+document.getElementById('closeDeleteModal').addEventListener('click', function() {
+    document.getElementById('deleteModal').classList.remove('active');
+});
+
+document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
 });
 

@@ -86,6 +86,15 @@ def add_category():
         conn.close()
     return redirect(url_for("index"))
 
+@app.route("/category/delete/<int:category_id>")
+def delete_category(category_id):
+    conn = get_connection()
+    conn.execute("UPDATE habits SET category_id = NULL WHERE category_id = ?", (category_id,))
+    conn.execute("DELETE FROM categories WHERE id = ?", (category_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("index"))
+
 @app.route("/habit/<int:habit_id>/calendar")
 def habit_calendar(habit_id):
     import calendar
