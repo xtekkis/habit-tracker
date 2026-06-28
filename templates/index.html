@@ -2,20 +2,31 @@
 {% block title %}Habits - Habit Tracker{% endblock %}
 
 {% block content %}
-<section class="add-form">
-    <h2 class="section-heading">Add a habit</h2>
-    <form action="/add" method="POST">
-        <input type="text" name="name" placeholder="e.g. Read for 20 minutes..." required maxlength="100">
-        <select name="category_id">
-            <option value="">No category</option>
-            {% for cat in categories %}
-            <option value="{{ cat['id'] }}">{{ cat['name'] }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Add</button>
-    </form>
-    <button type="button" class="btn-secondary" id="openCategoryModal">+ Category</button>
-</section>
+
+<!-- Hero: date, week strip, progress -->
+<div class="home-hero">
+    <p class="home-date">{{ day_name }}, {{ day_month }}</p>
+    <div class="week-strip">
+        {% for day in week_days %}
+        <div class="week-day {% if day.is_today %}week-day-today{% endif %}">
+            <span class="week-day-label">{{ day.label }}</span>
+            <span class="week-day-number">{{ day.number }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% set total = habits|length %}
+    {% set done = logged_today|length %}
+    {% set pct = ((done / total * 100) | int) if total > 0 else 0 %}
+    <div class="home-progress">
+        <div class="home-progress-header">
+            <span>{{ done }} of {{ total }} done today</span>
+            <span class="home-progress-pct">{{ pct }}%</span>
+        </div>
+        <div class="home-progress-track">
+            <div class="home-progress-fill" data-width="{{ pct }}"></div>
+        </div>
+    </div>
+</div>
 
 {% if categories %}
 <div class="filter-bar">
@@ -27,6 +38,8 @@
     {% endfor %}
 </div>
 {% endif %}
+
+<p class="section-label">Daily routine</p>
 
 <section class="habit-list">
     {% for habit in habits %}
@@ -88,6 +101,22 @@
     {% else %}
     <p class="empty">No habits yet. Add one above.</p>
     {% endfor %}
+</section>
+
+<!-- Add form (moves to FAB bottom sheet in next commit) -->
+<section class="add-form">
+    <h2 class="section-heading">Add a habit</h2>
+    <form action="/add" method="POST">
+        <input type="text" name="name" placeholder="e.g. Read for 20 minutes..." required maxlength="100">
+        <select name="category_id">
+            <option value="">No category</option>
+            {% for cat in categories %}
+            <option value="{{ cat['id'] }}">{{ cat['name'] }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Add</button>
+    </form>
+    <button type="button" class="btn-secondary" id="openCategoryModal">+ Category</button>
 </section>
 
 <!-- Log habit modal -->
@@ -156,8 +185,8 @@ document.querySelectorAll('.habit-card').forEach(function(card, i) {
     card.style.animationDelay = (i * 0.06) + 's';
 });
 
-// Progress bar animation
-document.querySelectorAll('.progress-fill').forEach(function(bar) {
+// Progress bar animations (habit bars + home hero bar)
+document.querySelectorAll('.progress-fill, .home-progress-fill').forEach(function(bar) {
     var target = (bar.dataset.width || '0') + '%';
     bar.style.width = '0';
     setTimeout(function() { bar.style.width = target; }, 120);

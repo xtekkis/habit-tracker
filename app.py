@@ -5,8 +5,10 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    from datetime import date
-    today = date.today().isoformat()
+    from datetime import date, timedelta
+    today_date = date.today()
+    today = today_date.isoformat()
+
     conn = get_connection()
     habits = conn.execute("""
         SELECT h.*, c.name as category_name
@@ -20,11 +22,35 @@ def index():
         ).fetchall()
     )
     conn.close()
+
+    monday = today_date - timedelta(days=today_date.weekday())
+    week_days = [
+        {
+            'label': ['M','T','W','T','F','S','S'][i],
+            'number': (monday + timedelta(days=i)).day,
+            'is_today': (monday + timedelta(days=i)) == today_date
+        }
+        for i in range(7)
+    ]
+
+    day_name = today_date.strftime("%A")
+    day_month = f"{today_date.day} {today_date.strftime('%B')}"
+
     streaks = {habit["id"]: get_streak(habit["id"]) for habit in habits}
     weekly_counts = get_weekly_counts()
     categories = get_categories()
     todays_notes = get_todays_notes()
-    return render_template("index.html", habits=habits, streaks=streaks, logged_today=logged_today, weekly_counts=weekly_counts, categories=categories, todays_notes=todays_notes)
+    return render_template("index.html",
+        habits=habits,
+        streaks=streaks,
+        logged_today=logged_today,
+        weekly_counts=weekly_counts,
+        categories=categories,
+        todays_notes=todays_notes,
+        week_days=week_days,
+        day_name=day_name,
+        day_month=day_month
+    )
 
 @app.route("/add", methods=["POST"])
 def add_habit():
