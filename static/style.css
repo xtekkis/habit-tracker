@@ -435,8 +435,8 @@ button:active {
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 16px;
+    gap: 12px;
+    padding: 14px 16px;
     transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
     animation: slideUp 0.3s ease both;
 }
@@ -452,7 +452,41 @@ button:active {
     background: var(--success-soft);
 }
 
-.habit-info {
+/* Color tile */
+
+.habit-tile {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.habit-tile-letter {
+    font-size: 20px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.tile-none { background: #A8A29E; }
+.tile-0    { background: #EF4444; }
+.tile-1    { background: #3B82F6; }
+.tile-2    { background: #8B5CF6; }
+.tile-3    { background: #22C55E; }
+.tile-4    { background: #F59E0B; }
+.tile-5    { background: #EC4899; }
+.tile-6    { background: #14B8A6; }
+.tile-7    { background: #F97316; }
+
+/* Habit body */
+
+.habit-body {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -480,17 +514,12 @@ button:active {
     padding: 2px 8px;
 }
 
-.habit-streak {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
 .progress-bar {
-    width: 160px;
+    width: 100%;
     height: 4px;
     background: var(--border);
     border-radius: 2px;
-    margin-top: 6px;
+    margin-top: 4px;
     overflow: hidden;
 }
 
@@ -509,7 +538,7 @@ button:active {
 .progress-label {
     font-size: 11px;
     color: var(--text-faint);
-    margin-top: 3px;
+    margin-top: 2px;
     display: block;
 }
 
@@ -517,39 +546,162 @@ button:active {
     display: block;
     font-size: 12px;
     color: var(--text-faint);
-    margin-top: 4px;
+    margin-top: 3px;
     font-style: italic;
 }
 
-.habit-actions {
+/* Habit right column */
+
+.habit-right {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
     flex-shrink: 0;
 }
 
-.habit-actions button {
-    padding: 7px 14px;
-    font-size: 13px;
-}
+/* Streak pill */
 
-.done-label {
-    color: var(--success);
-    font-size: 13px;
+.streak-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
     font-weight: 600;
-    animation: fadeIn 0.4s ease;
-}
-
-a.delete, a.edit-link, a.calendar-link {
     color: var(--text-faint);
-    font-size: 13px;
-    text-decoration: none;
-    transition: color 0.15s;
+    background: var(--surface-2);
+    border-radius: var(--radius-full);
+    padding: 3px 8px;
+    white-space: nowrap;
 }
 
-a.delete:hover       { color: var(--danger); }
-a.edit-link:hover    { color: var(--primary); }
-a.calendar-link:hover { color: var(--primary); }
+.streak-pill svg {
+    width: 12px;
+    height: 12px;
+    stroke-width: 2;
+}
+
+.streak-active {
+    color: var(--primary);
+    background: var(--primary-soft);
+}
+
+/* Round check button */
+
+.check-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+    padding: 0;
+}
+
+.check-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5;
+}
+
+.check-btn:hover {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+.check-btn.check-done {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+    cursor: default;
+    animation: fadeIn 0.3s ease;
+}
+
+.check-btn.check-done:hover {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+}
+
+/* Overflow menu */
+
+.overflow-wrap {
+    position: relative;
+}
+
+.overflow-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.overflow-btn svg {
+    width: 15px;
+    height: 15px;
+    stroke-width: 2;
+}
+
+.overflow-btn:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.overflow-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    min-width: 130px;
+    z-index: 20;
+    overflow: hidden;
+}
+
+.overflow-menu.open {
+    display: block;
+    animation: fadeIn 0.12s ease;
+}
+
+.overflow-item {
+    display: block;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    transition: background 0.12s;
+}
+
+.overflow-item:hover {
+    background: var(--surface-2);
+}
+
+.overflow-danger {
+    color: var(--danger);
+}
+
+.overflow-danger:hover {
+    background: rgba(239, 68, 68, 0.06);
+    color: var(--danger);
+}
 
 /* Empty state */
 

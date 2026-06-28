@@ -31,38 +31,59 @@
 <section class="habit-list">
     {% for habit in habits %}
     <div class="habit-card {% if habit['id'] in logged_today %}done{% endif %}" data-category="{{ habit['category_id'] or '' }}">
-        <div class="habit-info">
+
+        <div class="habit-tile {% if habit['category_id'] %}tile-{{ (habit['category_id'] - 1) % 8 }}{% else %}tile-none{% endif %}">
+            <span class="habit-tile-letter">{{ habit['name'][0] | upper }}</span>
+        </div>
+
+        <div class="habit-body">
             <div class="habit-name-row">
                 <span class="habit-name">{{ habit["name"] }}</span>
                 {% if habit["category_name"] %}
                 <span class="category-badge">{{ habit["category_name"] }}</span>
                 {% endif %}
             </div>
-            <span class="habit-streak">{{ streaks[habit["id"]] }} day streak</span>
             {% set count = weekly_counts.get(habit["id"], 0) %}
             <div class="progress-bar">
-                <div class="progress-fill" style="width: {{ (count / 7 * 100) | int }}%"></div>
+                <div class="progress-fill" data-width="{{ (count / 7 * 100) | int }}"></div>
             </div>
             <span class="progress-label">{{ count }}/7 this week</span>
             {% if todays_notes.get(habit["id"]) %}
             <span class="todays-note">{{ todays_notes[habit["id"]] }}</span>
             {% endif %}
         </div>
-        <div class="habit-actions">
+
+        <div class="habit-right">
+            <div class="streak-pill {% if streaks[habit['id']] > 0 %}streak-active{% endif %}">
+                <i data-lucide="flame"></i>
+                <span>{{ streaks[habit["id"]] }}</span>
+            </div>
             {% if habit["id"] in logged_today %}
-                <span class="done-label">Done</span>
+            <button class="check-btn check-done" disabled>
+                <i data-lucide="check"></i>
+            </button>
             {% else %}
-                <button class="log-btn" data-id="{{ habit['id'] }}" data-name="{{ habit['name'] }}">Log today</button>
+            <button class="check-btn log-btn" data-id="{{ habit['id'] }}" data-name="{{ habit['name'] }}">
+                <i data-lucide="plus"></i>
+            </button>
             {% endif %}
-            <a class="edit-link" href="#"
-               data-id="{{ habit['id'] }}"
-               data-name="{{ habit['name'] }}"
-               data-category="{{ habit['category_id'] or '' }}">Edit</a>
-            <a class="calendar-link" href="/habit/{{ habit['id'] }}/calendar">Calendar</a>
-            <a class="delete open-delete" href="#"
-               data-id="{{ habit['id'] }}"
-               data-name="{{ habit['name'] }}">Delete</a>
+            <div class="overflow-wrap">
+                <button class="overflow-btn">
+                    <i data-lucide="more-vertical"></i>
+                </button>
+                <div class="overflow-menu" id="overflow-{{ habit['id'] }}">
+                    <a class="overflow-item edit-link" href="#"
+                       data-id="{{ habit['id'] }}"
+                       data-name="{{ habit['name'] }}"
+                       data-category="{{ habit['category_id'] or '' }}">Edit</a>
+                    <a class="overflow-item" href="/habit/{{ habit['id'] }}/calendar">Calendar</a>
+                    <a class="overflow-item overflow-danger open-delete" href="#"
+                       data-id="{{ habit['id'] }}"
+                       data-name="{{ habit['name'] }}">Delete</a>
+                </div>
+            </div>
         </div>
+
     </div>
     {% else %}
     <p class="empty">No habits yet. Add one above.</p>
@@ -130,35 +151,14 @@
 </div>
 
 <script>
-// Edit modal
-document.querySelectorAll('.edit-link').forEach(function(link) {
-    link.addEventListener('click', function(e) {
-        e.preventDefault();
-        document.getElementById('editForm').action = '/edit/' + this.dataset.id;
-        document.getElementById('editInput').value = this.dataset.name;
-        var catSelect = document.getElementById('editCategory');
-        catSelect.value = this.dataset.category || '';
-        document.getElementById('editModal').classList.add('active');
-        document.getElementById('editInput').focus();
-    });
-});
-
-document.getElementById('closeEditModal').addEventListener('click', function() {
-    document.getElementById('editModal').classList.remove('active');
-});
-
-document.getElementById('editModal').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('active');
-});
-
 // Staggered card entrance
 document.querySelectorAll('.habit-card').forEach(function(card, i) {
-    card.style.animationDelay = (i * 0.07) + 's';
+    card.style.animationDelay = (i * 0.06) + 's';
 });
 
 // Progress bar animation
 document.querySelectorAll('.progress-fill').forEach(function(bar) {
-    var target = bar.style.width;
+    var target = (bar.dataset.width || '0') + '%';
     bar.style.width = '0';
     setTimeout(function() { bar.style.width = target; }, 120);
 });
@@ -182,6 +182,26 @@ document.getElementById('logModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
 });
 
+// Edit modal
+document.querySelectorAll('.edit-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('editForm').action = '/edit/' + this.dataset.id;
+        document.getElementById('editInput').value = this.dataset.name;
+        document.getElementById('editCategory').value = this.dataset.category || '';
+        document.getElementById('editModal').classList.add('active');
+        document.getElementById('editInput').focus();
+    });
+});
+
+document.getElementById('closeEditModal').addEventListener('click', function() {
+    document.getElementById('editModal').classList.remove('active');
+});
+
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+});
+
 // Delete confirmation modal
 document.querySelectorAll('.open-delete').forEach(function(link) {
     link.addEventListener('click', function(e) {
@@ -198,6 +218,25 @@ document.getElementById('closeDeleteModal').addEventListener('click', function()
 
 document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
+});
+
+// Overflow menu
+document.querySelectorAll('.overflow-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var menu = this.nextElementSibling;
+        var isOpen = menu.classList.contains('open');
+        document.querySelectorAll('.overflow-menu').forEach(function(m) {
+            m.classList.remove('open');
+        });
+        if (!isOpen) menu.classList.add('open');
+    });
+});
+
+document.addEventListener('click', function() {
+    document.querySelectorAll('.overflow-menu').forEach(function(m) {
+        m.classList.remove('open');
+    });
 });
 
 // Category filter
