@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection, get_streak, get_weekly_summary, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month
+from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month
 
 app = Flask(__name__)
 
@@ -83,8 +83,52 @@ def monthly_summary():
 
 @app.route("/weekly")
 def weekly_summary():
-    summary = get_weekly_summary()
-    return render_template("weekly.html", summary=summary)
+    from datetime import date, timedelta
+    today = date.today()
+    week_start = today - timedelta(days=6)
+    month_start = today.replace(day=1)
+
+    conn = get_connection()
+    habits = conn.execute("SELECT id, name FROM habits ORDER BY created_at DESC").fetchall()
+
+    habit_data = []
+    for habit in habits:
+        week_count = conn.execute(
+            "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
+            (habit['id'], week_start.isoformat(), today.isoformat())
+        ).fetchone()[0]
+        month_count = conn.execute(
+            "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
+            (habit['id'], month_start.isoformat(), today.isoformat())
+        ).fetchone()[0]
+        habit_data.append({
+            'name': habit['name'],
+            'week_count': week_count,
+            'week_pct': int(week_count / 7 * 100),
+            'month_count': month_count,
+            'month_pct': int(month_count / today.day * 100),
+        })
+    conn.close()
+
+    streaks = [get_streak(h['id']) for h in habits]
+    best_streak = max(streaks) if streaks else 0
+
+    week_total = sum(h['week_count'] for h in habit_data)
+    week_active = sum(1 for h in habit_data if h['week_count'] > 0)
+    week_possible = len(habits) * 7
+    week_rate = int(week_total / week_possible * 100) if week_possible > 0 else 0
+
+    month_total = sum(h['month_count'] for h in habit_data)
+    month_active = sum(1 for h in habit_data if h['month_count'] > 0)
+    month_possible = len(habits) * today.day
+    month_rate = int(month_total / month_possible * 100) if month_possible > 0 else 0
+
+    return render_template("weekly.html",
+        habit_data=habit_data,
+        best_streak=best_streak,
+        week_total=week_total, week_active=week_active, week_rate=week_rate,
+        month_total=month_total, month_active=month_active, month_rate=month_rate,
+    )
 
 @app.route("/edit/<int:habit_id>", methods=["POST"])
 def edit_habit(habit_id):
