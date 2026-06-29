@@ -85,8 +85,9 @@ def monthly_summary():
 def weekly_summary():
     from datetime import date, timedelta
     today = date.today()
-    week_start = today - timedelta(days=6)
+    week_start = today - timedelta(days=today.weekday())  # Monday of current week
     month_start = today.replace(day=1)
+    days_elapsed_this_week = today.weekday() + 1  # 1 on Monday, 7 on Sunday
 
     conn = get_connection()
     habits = conn.execute("SELECT id, name, category_id FROM habits ORDER BY created_at DESC").fetchall()
@@ -107,7 +108,7 @@ def weekly_summary():
             'name': habit['name'],
             'tile_class': tile_class,
             'week_count': week_count,
-            'week_pct': int(week_count / 7 * 100),
+            'week_pct': int(week_count / days_elapsed_this_week * 100),
             'month_count': month_count,
             'month_pct': int(month_count / today.day * 100),
         })
@@ -118,7 +119,7 @@ def weekly_summary():
 
     week_total = sum(h['week_count'] for h in habit_data)
     week_active = sum(1 for h in habit_data if h['week_count'] > 0)
-    week_possible = len(habits) * 7
+    week_possible = len(habits) * days_elapsed_this_week
     week_rate = int(week_total / week_possible * 100) if week_possible > 0 else 0
 
     month_total = sum(h['month_count'] for h in habit_data)
