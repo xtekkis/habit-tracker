@@ -5,44 +5,44 @@
 {% block content %}
 
 <div class="period-toggle">
-    <button class="period-btn active" data-period="week">Week</button>
-    <button class="period-btn" data-period="month">Month</button>
+    <button class="period-btn active" data-period="week">This week</button>
+    <button class="period-btn" data-period="month">This month</button>
 </div>
 
 {% if habit_data %}
 
-<div class="stat-grid">
-    <div class="stat-card">
-        <span class="stat-value" data-week="{{ week_total }}" data-month="{{ month_total }}">{{ week_total }}</span>
-        <span class="stat-label">Check-ins</span>
-    </div>
-    <div class="stat-card">
-        <span class="stat-value stat-rate" data-week="{{ week_rate }}" data-month="{{ month_rate }}">{{ week_rate }}%</span>
-        <span class="stat-label">Completion</span>
-    </div>
-    <div class="stat-card">
-        <span class="stat-value" data-week="{{ week_active }}" data-month="{{ month_active }}">{{ week_active }}</span>
-        <span class="stat-label">Active habits</span>
-    </div>
-    <div class="stat-card">
-        <span class="stat-value">{{ best_streak }}</span>
-        <span class="stat-label">Top streak</span>
-        <span class="stat-sub">days</span>
-    </div>
-</div>
-
-<p class="section-label">By habit</p>
+<p class="section-label">Completion by habit</p>
 
 <div class="bar-chart">
     {% for h in habit_data %}
     <div class="bar-group">
         <span class="bar-count" data-week="{{ h['week_count'] }}" data-month="{{ h['month_count'] }}">{{ h['week_count'] }}</span>
         <div class="bar-track">
-            <div class="bar-fill" data-week="{{ h['week_pct'] }}" data-month="{{ h['month_pct'] }}"></div>
+            <div class="bar-fill {{ h['tile_class'] }}" data-week="{{ h['week_pct'] }}" data-month="{{ h['month_pct'] }}"></div>
         </div>
         <span class="bar-label">{{ h['name'][0] | upper }}</span>
     </div>
     {% endfor %}
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card">
+        <span class="stat-value">{{ best_streak }}</span>
+        <span class="stat-label">Best streak</span>
+        <span class="stat-sub">days</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-value" data-week="{{ week_total }}" data-month="{{ month_total }}">{{ week_total }}</span>
+        <span class="stat-label">Check-ins</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-value" data-week="{{ week_active }}" data-month="{{ month_active }}">{{ week_active }}</span>
+        <span class="stat-label">Active habits</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-value stat-rate" data-week="{{ week_rate }}" data-month="{{ month_rate }}">{{ week_rate }}%</span>
+        <span class="stat-label">Completion</span>
+    </div>
 </div>
 
 {% else %}

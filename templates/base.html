@@ -50,6 +50,21 @@
                 document.getElementById('tab-insights').classList.add('active');
             }
         })();
+        // FAB wired here so tab-bar is already in DOM
+        (function() {
+            var fab = document.getElementById('tab-fab');
+            if (!fab) return;
+            fab.addEventListener('click', function() {
+                var addSheet = document.getElementById('addSheet');
+                if (addSheet && typeof openSheet === 'function') {
+                    openSheet('addSheet');
+                    setTimeout(function() {
+                        var input = addSheet.querySelector('input[name="name"]');
+                        if (input) input.focus();
+                    }, 350);
+                }
+            });
+        })();
     </script>
 </body>
 </html>

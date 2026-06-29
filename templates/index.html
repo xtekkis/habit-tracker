@@ -240,17 +240,6 @@ function closeSheet(id) {
     }
 }
 
-// FAB → add sheet
-var fab = document.getElementById('tab-fab');
-if (fab) {
-    fab.addEventListener('click', function() {
-        openSheet('addSheet');
-        setTimeout(function() {
-            document.querySelector('#addSheet input[name="name"]').focus();
-        }, 350);
-    });
-}
-
 // Generic close buttons
 document.querySelectorAll('.sheet-close').forEach(function(btn) {
     btn.addEventListener('click', function() {

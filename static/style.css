@@ -1092,6 +1092,7 @@ tbody td {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+    margin-top: 20px;
     margin-bottom: 4px;
 }
 
@@ -1163,10 +1164,13 @@ tbody td {
 
 .bar-fill {
     width: 100%;
-    background: var(--primary);
     border-radius: 6px;
     height: 0%;
     transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bar-fill:not([class*="tile-"]) {
+    background: var(--primary);
 }
 
 .bar-label {
