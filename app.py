@@ -56,10 +56,11 @@ def index():
 def add_habit():
     name = request.form.get("name", "").strip()[:100]
     category_id = request.form.get("category_id") or None
+    repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
     if name:
         conn = get_connection()
         try:
-            conn.execute("INSERT INTO habits (name, category_id) VALUES (?, ?)", (name, category_id))
+            conn.execute("INSERT INTO habits (name, category_id, repeat_days) VALUES (?, ?, ?)", (name, category_id, repeat_days))
             conn.commit()
         except Exception:
             pass
@@ -89,10 +90,11 @@ def weekly_summary():
 def edit_habit(habit_id):
     name = request.form.get("name", "").strip()[:100]
     category_id = request.form.get("category_id") or None
+    repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
     if name:
         conn = get_connection()
         try:
-            conn.execute("UPDATE habits SET name = ?, category_id = ? WHERE id = ?", (name, category_id, habit_id))
+            conn.execute("UPDATE habits SET name = ?, category_id = ?, repeat_days = ? WHERE id = ?", (name, category_id, repeat_days, habit_id))
             conn.commit()
         except Exception:
             pass

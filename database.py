@@ -48,6 +48,11 @@ def init_db():
     except Exception:
         pass
 
+    try:
+        cursor.execute("ALTER TABLE habits ADD COLUMN repeat_days TEXT NOT NULL DEFAULT '1111111'")
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
 

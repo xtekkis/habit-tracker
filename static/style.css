@@ -1047,6 +1047,200 @@ tbody td {
     -webkit-box-orient: vertical;
 }
 
+/* Bottom sheet */
+
+html.no-scroll {
+    overflow: hidden;
+}
+
+.sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.sheet-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.sheet {
+    background: var(--surface);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    width: 100%;
+    max-width: 440px;
+    padding: 12px 20px 48px;
+    max-height: 90svh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.sheet-overlay.active .sheet {
+    transform: translateY(0);
+}
+
+.sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border-strong);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+}
+
+.sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.sheet-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+    margin: 0;
+}
+
+.sheet-close-btn {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: none;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.15s, color 0.15s;
+}
+
+.sheet-close-btn:hover {
+    background: var(--border);
+    color: var(--text);
+}
+
+.sheet-close-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+}
+
+.sheet-close-btn:active {
+    transform: none;
+}
+
+/* Field labels */
+
+.field-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 8px;
+    margin-top: 20px;
+}
+
+.sheet form > .field-label:first-of-type {
+    margin-top: 0;
+}
+
+.sheet input[type="text"],
+.sheet select {
+    width: 100%;
+}
+
+.btn-sheet-submit {
+    width: 100%;
+    margin-top: 28px;
+    padding: 14px;
+    font-size: 15px;
+    border-radius: var(--radius-md);
+}
+
+.btn-new-category {
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 0 0;
+    cursor: pointer;
+    text-align: left;
+    box-shadow: none;
+}
+
+.btn-new-category:hover {
+    background: transparent;
+    color: var(--primary-hover);
+    transform: none;
+}
+
+/* Day picker */
+
+.day-picker {
+    display: flex;
+    gap: 6px;
+}
+
+.day-btn {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.day-btn input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.day-btn span {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1.5px solid var(--border);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none;
+}
+
+.day-btn input[type="checkbox"]:checked + span {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+/* Log form (invisible to layout) */
+
+.log-form {
+    display: contents;
+}
+
 /* Animations */
 
 @keyframes slideUp {

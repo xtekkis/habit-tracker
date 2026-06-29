@@ -76,9 +76,12 @@
                 <i data-lucide="check"></i>
             </button>
             {% else %}
-            <button class="check-btn log-btn" data-id="{{ habit['id'] }}" data-name="{{ habit['name'] }}">
-                <i data-lucide="plus"></i>
-            </button>
+            <form method="POST" action="/log/{{ habit['id'] }}" class="log-form">
+                <input type="hidden" name="notes" value="">
+                <button type="submit" class="check-btn">
+                    <i data-lucide="plus"></i>
+                </button>
+            </form>
             {% endif %}
             <div class="overflow-wrap">
                 <button class="overflow-btn">
@@ -88,7 +91,8 @@
                     <a class="overflow-item edit-link" href="#"
                        data-id="{{ habit['id'] }}"
                        data-name="{{ habit['name'] }}"
-                       data-category="{{ habit['category_id'] or '' }}">Edit</a>
+                       data-category="{{ habit['category_id'] or '' }}"
+                       data-repeat="{{ habit['repeat_days'] or '1111111' }}">Edit</a>
                     <a class="overflow-item" href="/habit/{{ habit['id'] }}/calendar">Calendar</a>
                     <a class="overflow-item overflow-danger open-delete" href="#"
                        data-id="{{ habit['id'] }}"
@@ -99,73 +103,9 @@
 
     </div>
     {% else %}
-    <p class="empty">No habits yet. Add one above.</p>
+    <p class="empty">No habits yet. Tap + to add one.</p>
     {% endfor %}
 </section>
-
-<!-- Add form (moves to FAB bottom sheet in next commit) -->
-<section class="add-form">
-    <h2 class="section-heading">Add a habit</h2>
-    <form action="/add" method="POST">
-        <input type="text" name="name" placeholder="e.g. Read for 20 minutes..." required maxlength="100">
-        <select name="category_id">
-            <option value="">No category</option>
-            {% for cat in categories %}
-            <option value="{{ cat['id'] }}">{{ cat['name'] }}</option>
-            {% endfor %}
-        </select>
-        <button type="submit">Add</button>
-    </form>
-    <button type="button" class="btn-secondary" id="openCategoryModal">+ Category</button>
-</section>
-
-<!-- Log habit modal -->
-<div class="modal-overlay" id="logModal">
-    <div class="modal">
-        <h3 id="logModalTitle">Log habit</h3>
-        <form id="logForm" method="POST">
-            <textarea name="notes" id="logNotes" placeholder="Add a note... (optional)" maxlength="500"></textarea>
-            <div class="modal-actions">
-                <button type="submit">Log</button>
-                <button type="button" class="btn-cancel" id="closeLogModal">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Edit habit modal -->
-<div class="modal-overlay" id="editModal">
-    <div class="modal">
-        <h3>Edit habit</h3>
-        <form id="editForm" method="POST">
-            <input type="text" id="editInput" name="name" required maxlength="100">
-            <select name="category_id" id="editCategory">
-                <option value="">No category</option>
-                {% for cat in categories %}
-                <option value="{{ cat['id'] }}">{{ cat['name'] }}</option>
-                {% endfor %}
-            </select>
-            <div class="modal-actions">
-                <button type="submit">Save</button>
-                <button type="button" class="btn-cancel" id="closeEditModal">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Add category modal -->
-<div class="modal-overlay" id="categoryModal">
-    <div class="modal">
-        <h3>New category</h3>
-        <form action="/category/add" method="POST">
-            <input type="text" name="name" placeholder="Category name..." required maxlength="50">
-            <div class="modal-actions">
-                <button type="submit">Create</button>
-                <button type="button" class="btn-cancel" id="closeCategoryModal">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 <!-- Delete habit confirmation modal -->
 <div class="modal-overlay" id="deleteModal">
@@ -176,6 +116,102 @@
             <a id="deleteConfirmLink" href="#" class="btn-danger">Delete</a>
             <button type="button" class="btn-cancel" id="closeDeleteModal">Cancel</button>
         </div>
+    </div>
+</div>
+
+<!-- Add habit sheet -->
+<div class="sheet-overlay" id="addSheet">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h2 class="sheet-title">New habit</h2>
+            <button class="sheet-close-btn sheet-close" data-sheet="addSheet">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <form action="/add" method="POST">
+            <label class="field-label">Name</label>
+            <input type="text" name="name" placeholder="e.g. Read for 20 minutes..." required maxlength="100">
+
+            <label class="field-label">Repeat</label>
+            <div class="day-picker">
+                {% for i in range(7) %}
+                <label class="day-btn">
+                    <input type="checkbox" class="day-checkbox" name="day_{{ i }}" checked>
+                    <span>{{ ['M','T','W','T','F','S','S'][i] }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <label class="field-label">Category</label>
+            <select name="category_id">
+                <option value="">No category</option>
+                {% for cat in categories %}
+                <option value="{{ cat['id'] }}">{{ cat['name'] }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="button" class="btn-new-category sheet-open" data-sheet="categorySheet">+ New category</button>
+
+            <button type="submit" class="btn-sheet-submit">Add habit</button>
+        </form>
+    </div>
+</div>
+
+<!-- Edit habit sheet -->
+<div class="sheet-overlay" id="editSheet">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h2 class="sheet-title">Edit habit</h2>
+            <button class="sheet-close-btn sheet-close" data-sheet="editSheet">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <form id="editSheetForm" method="POST">
+            <label class="field-label">Name</label>
+            <input type="text" id="editSheetInput" name="name" required maxlength="100">
+
+            <label class="field-label">Repeat</label>
+            <div class="day-picker" id="editDayPicker">
+                {% for i in range(7) %}
+                <label class="day-btn">
+                    <input type="checkbox" class="day-checkbox" name="day_{{ i }}">
+                    <span>{{ ['M','T','W','T','F','S','S'][i] }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <label class="field-label">Category</label>
+            <select name="category_id" id="editSheetCategory">
+                <option value="">No category</option>
+                {% for cat in categories %}
+                <option value="{{ cat['id'] }}">{{ cat['name'] }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="button" class="btn-new-category sheet-open" data-sheet="categorySheet">+ New category</button>
+
+            <button type="submit" class="btn-sheet-submit">Save changes</button>
+        </form>
+    </div>
+</div>
+
+<!-- New category sheet -->
+<div class="sheet-overlay" id="categorySheet">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h2 class="sheet-title">New category</h2>
+            <button class="sheet-close-btn sheet-close" data-sheet="categorySheet">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <form action="/category/add" method="POST">
+            <label class="field-label">Name</label>
+            <input type="text" name="name" placeholder="e.g. Health, Work, Personal..." required maxlength="50">
+            <button type="submit" class="btn-sheet-submit">Create category</button>
+        </form>
     </div>
 </div>
 
@@ -192,43 +228,76 @@ document.querySelectorAll('.progress-fill, .home-progress-fill').forEach(functio
     setTimeout(function() { bar.style.width = target; }, 120);
 });
 
-// Log modal
-document.querySelectorAll('.log-btn').forEach(function(btn) {
+// Sheet helpers
+function openSheet(id) {
+    document.getElementById(id).classList.add('active');
+    document.documentElement.classList.add('no-scroll');
+}
+function closeSheet(id) {
+    document.getElementById(id).classList.remove('active');
+    if (!document.querySelector('.sheet-overlay.active')) {
+        document.documentElement.classList.remove('no-scroll');
+    }
+}
+
+// FAB → add sheet
+var fab = document.getElementById('tab-fab');
+if (fab) {
+    fab.addEventListener('click', function() {
+        openSheet('addSheet');
+        setTimeout(function() {
+            document.querySelector('#addSheet input[name="name"]').focus();
+        }, 350);
+    });
+}
+
+// Generic close buttons
+document.querySelectorAll('.sheet-close').forEach(function(btn) {
     btn.addEventListener('click', function() {
-        document.getElementById('logForm').action = '/log/' + this.dataset.id;
-        document.getElementById('logModalTitle').textContent = this.dataset.name;
-        document.getElementById('logNotes').value = '';
-        document.getElementById('logModal').classList.add('active');
-        document.getElementById('logNotes').focus();
+        closeSheet(this.dataset.sheet);
     });
 });
 
-document.getElementById('closeLogModal').addEventListener('click', function() {
-    document.getElementById('logModal').classList.remove('active');
+// Backdrop click to close sheets
+document.querySelectorAll('.sheet-overlay').forEach(function(overlay) {
+    overlay.addEventListener('click', function(e) {
+        if (e.target === this) closeSheet(this.id);
+    });
 });
 
-document.getElementById('logModal').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('active');
+// Generic open buttons (New category inside sheets)
+document.querySelectorAll('.sheet-open').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        openSheet(this.dataset.sheet);
+    });
 });
 
-// Edit modal
+// Escape key to close sheets
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.sheet-overlay.active').forEach(function(overlay) {
+            closeSheet(overlay.id);
+        });
+        document.getElementById('deleteModal').classList.remove('active');
+    }
+});
+
+// Edit link → edit sheet
 document.querySelectorAll('.edit-link').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.preventDefault();
-        document.getElementById('editForm').action = '/edit/' + this.dataset.id;
-        document.getElementById('editInput').value = this.dataset.name;
-        document.getElementById('editCategory').value = this.dataset.category || '';
-        document.getElementById('editModal').classList.add('active');
-        document.getElementById('editInput').focus();
+        document.getElementById('editSheetForm').action = '/edit/' + this.dataset.id;
+        document.getElementById('editSheetInput').value = this.dataset.name;
+        document.getElementById('editSheetCategory').value = this.dataset.category || '';
+        var repeat = this.dataset.repeat || '1111111';
+        document.querySelectorAll('#editDayPicker .day-checkbox').forEach(function(cb, i) {
+            cb.checked = repeat[i] === '1';
+        });
+        openSheet('editSheet');
+        setTimeout(function() {
+            document.getElementById('editSheetInput').focus();
+        }, 350);
     });
-});
-
-document.getElementById('closeEditModal').addEventListener('click', function() {
-    document.getElementById('editModal').classList.remove('active');
-});
-
-document.getElementById('editModal').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('active');
 });
 
 // Delete confirmation modal
@@ -278,19 +347,6 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
             card.style.display = (!filter || card.dataset.category === filter) ? '' : 'none';
         });
     });
-});
-
-// Category modal
-document.getElementById('openCategoryModal').addEventListener('click', function() {
-    document.getElementById('categoryModal').classList.add('active');
-});
-
-document.getElementById('closeCategoryModal').addEventListener('click', function() {
-    document.getElementById('categoryModal').classList.remove('active');
-});
-
-document.getElementById('categoryModal').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('active');
 });
 </script>
 {% endblock %}
