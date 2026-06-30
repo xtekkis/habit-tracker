@@ -169,7 +169,10 @@ def delete_category(category_id):
     conn.execute("DELETE FROM categories WHERE id = ?", (category_id,))
     conn.commit()
     conn.close()
-    return redirect(url_for("index"))
+    next_url = request.args.get('next', url_for('index'))
+    if not next_url.startswith('/'):
+        next_url = url_for('index')
+    return redirect(next_url)
 
 @app.route("/calendar")
 def calendar_index():
@@ -185,7 +188,18 @@ def calendar_index():
 
 @app.route("/settings")
 def settings():
-    return render_template("settings.html")
+    categories = get_categories()
+    return render_template("settings.html", categories=categories)
+
+@app.route("/reset", methods=["POST"])
+def reset_all():
+    conn = get_connection()
+    conn.execute("DELETE FROM logs")
+    conn.execute("DELETE FROM habits")
+    conn.execute("DELETE FROM categories")
+    conn.commit()
+    conn.close()
+    return redirect(url_for("index"))
 
 @app.route("/habit/<int:habit_id>/calendar")
 def habit_calendar(habit_id):

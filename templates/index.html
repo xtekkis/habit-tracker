@@ -32,9 +32,7 @@
 <div class="filter-bar">
     <button class="filter-btn active" data-filter="">All</button>
     {% for cat in categories %}
-    <span class="filter-pill">
-        <button class="filter-btn" data-filter="{{ cat['id'] }}">{{ cat['name'] }}</button><a class="cat-delete-btn" href="/category/delete/{{ cat['id'] }}" title="Remove category">×</a>
-    </span>
+    <button class="filter-btn" data-filter="{{ cat['id'] }}">{{ cat['name'] }}</button>
     {% endfor %}
 </div>
 {% endif %}
@@ -104,9 +102,12 @@
     </div>
     {% else %}
     <div class="empty-state">
-        <div class="empty-state-icon"><i data-lucide="clipboard-list"></i></div>
-        <p class="empty-state-title">No habits yet</p>
-        <p class="empty-state-sub">Tap <strong>+</strong> to add your first habit</p>
+        <div class="empty-state-icon"><i data-lucide="sprout"></i></div>
+        <p class="empty-state-title">Start your first habit</p>
+        <p class="empty-state-sub">Small steps, every day. Add a habit and check it off to build your streak.</p>
+        <button class="btn-empty-add" id="emptyAddBtn">
+            <i data-lucide="plus"></i> Add your first habit
+        </button>
     </div>
     {% endfor %}
 </section>
@@ -232,18 +233,6 @@ document.querySelectorAll('.progress-fill, .home-progress-fill').forEach(functio
     setTimeout(function() { bar.style.width = target; }, 120);
 });
 
-// Sheet helpers
-function openSheet(id) {
-    document.getElementById(id).classList.add('active');
-    document.documentElement.classList.add('no-scroll');
-}
-function closeSheet(id) {
-    document.getElementById(id).classList.remove('active');
-    if (!document.querySelector('.sheet-overlay.active')) {
-        document.documentElement.classList.remove('no-scroll');
-    }
-}
-
 // Generic close buttons
 document.querySelectorAll('.sheet-close').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -330,6 +319,12 @@ document.addEventListener('click', function() {
     });
 });
 
+// Empty state add button
+var emptyAddBtn = document.getElementById('emptyAddBtn');
+if (emptyAddBtn) {
+    emptyAddBtn.addEventListener('click', function() { openSheet('addSheet'); });
+}
+
 // Category filter
 document.querySelectorAll('.filter-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -341,5 +336,17 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
         });
     });
 });
+
+// Auto-open add sheet when navigated from another tab via FAB (?add=1)
+// Deferred with setTimeout so base.html's openSheet/closeSheet are defined first,
+// and so this can't abort the listener setup above if something goes wrong.
+if (window.location.search.includes('add=1')) {
+    history.replaceState(null, '', '/');
+    setTimeout(function() {
+        openSheet('addSheet');
+        var input = document.querySelector('#addSheet input[name="name"]');
+        if (input) input.focus();
+    }, 0);
+}
 </script>
 {% endblock %}

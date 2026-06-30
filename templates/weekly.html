@@ -11,18 +11,19 @@
 
 {% if habit_data %}
 
-<p class="section-label">Completion by habit</p>
-
-<div class="bar-chart">
-    {% for h in habit_data %}
-    <div class="bar-group">
-        <span class="bar-count" data-week="{{ h['week_count'] }}" data-month="{{ h['month_count'] }}">{{ h['week_count'] }}</span>
-        <div class="bar-track">
-            <div class="bar-fill {{ h['tile_class'] }}" data-week="{{ h['week_pct'] }}" data-month="{{ h['month_pct'] }}"></div>
+<div class="chart-card">
+    <p class="chart-card-label">Completion by habit</p>
+    <div class="bar-chart">
+        {% for h in habit_data %}
+        <div class="bar-group">
+            <span class="bar-count" data-week="{{ h['week_pct'] }}" data-month="{{ h['month_pct'] }}"></span>
+            <div class="bar-track">
+                <div class="bar-fill {{ h['tile_class'] }}" data-week="{{ h['week_pct'] }}" data-month="{{ h['month_pct'] }}"></div>
+            </div>
+            <span class="bar-label">{{ h['name'] }}</span>
         </div>
-        <span class="bar-label">{{ h['name'][0] | upper }}</span>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
 
 <div class="stat-grid">
@@ -61,7 +62,8 @@ function applyPeriod(animate) {
         el.textContent = el.classList.contains('stat-rate') ? val + '%' : val;
     });
     document.querySelectorAll('.bar-count[data-week]').forEach(function(el) {
-        el.textContent = el.dataset[period];
+        var val = parseInt(el.dataset[period]);
+        el.textContent = val > 0 ? val + '%' : '';
     });
     document.querySelectorAll('.bar-fill').forEach(function(bar) {
         if (animate) bar.style.height = '0%';

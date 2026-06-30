@@ -10,21 +10,131 @@
         <div class="settings-item-icon"><i data-lucide="download"></i></div>
         <div class="settings-item-body">
             <span class="settings-item-label">Export data</span>
-            <span class="settings-item-sub">Download all habits and logs as CSV</span>
+            <span class="settings-item-sub">Download a CSV of all check-ins</span>
         </div>
         <i data-lucide="chevron-right" class="settings-item-arrow"></i>
     </a>
+    <button class="settings-item" id="manageCategoriesBtn">
+        <div class="settings-item-icon icon-green"><i data-lucide="tag"></i></div>
+        <div class="settings-item-body">
+            <span class="settings-item-label">Manage categories</span>
+            <span class="settings-item-sub">{{ categories|length }} categor{{ 'y' if categories|length == 1 else 'ies' }}</span>
+        </div>
+        <i data-lucide="chevron-right" class="settings-item-arrow"></i>
+    </button>
+</div>
+
+<p class="section-label">Preferences</p>
+<div class="settings-list">
+    <div class="settings-item settings-item-static">
+        <div class="settings-item-icon icon-muted"><i data-lucide="calendar-days"></i></div>
+        <div class="settings-item-body">
+            <span class="settings-item-label">Start week on</span>
+        </div>
+        <span class="settings-item-value">Monday</span>
+    </div>
+    <div class="settings-item settings-item-static">
+        <div class="settings-item-icon icon-flame"><i data-lucide="flame"></i></div>
+        <div class="settings-item-body">
+            <span class="settings-item-label">Show streaks</span>
+        </div>
+        <span class="settings-toggle settings-toggle-on"></span>
+    </div>
 </div>
 
 <p class="section-label">About</p>
 <div class="settings-list">
     <div class="settings-item settings-item-static">
-        <div class="settings-item-icon"><i data-lucide="info"></i></div>
+        <div class="settings-item-icon icon-muted"><i data-lucide="info"></i></div>
         <div class="settings-item-body">
-            <span class="settings-item-label">Habit Tracker</span>
-            <span class="settings-item-sub">Version 1.0 · Flask + SQLite</span>
+            <span class="settings-item-label">About</span>
+        </div>
+        <span class="settings-item-value">v1.0</span>
+    </div>
+    <a href="https://github.com/xtekkis/habit-tracker" class="settings-item" target="_blank" rel="noopener">
+        <div class="settings-item-icon icon-muted"><i data-lucide="code-2"></i></div>
+        <div class="settings-item-body">
+            <span class="settings-item-label">Source code</span>
+        </div>
+        <i data-lucide="external-link" class="settings-item-arrow"></i>
+    </a>
+</div>
+
+<button class="btn-reset" id="resetBtn">
+    <i data-lucide="trash-2"></i> Reset all data
+</button>
+
+<!-- Manage categories sheet -->
+<div class="sheet-overlay" id="categoryMgmtSheet">
+    <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h2 class="sheet-title">Categories</h2>
+            <button class="sheet-close-btn sheet-close" data-sheet="categoryMgmtSheet">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        {% if categories %}
+        <div class="cat-mgmt-list">
+            {% for cat in categories %}
+            <div class="cat-mgmt-item">
+                <span class="cat-mgmt-name">{{ cat['name'] }}</span>
+                <a href="/category/delete/{{ cat['id'] }}?next=/settings" class="cat-mgmt-delete" title="Delete">
+                    <i data-lucide="trash-2"></i>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="cat-mgmt-empty">No categories yet. Add one from the Today tab.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Reset confirmation modal -->
+<div class="modal-overlay" id="resetModal">
+    <div class="modal">
+        <h3>Reset all data</h3>
+        <p class="modal-body-text">This will permanently delete all habits, logs, and categories. This can't be undone.</p>
+        <div class="modal-actions">
+            <form action="/reset" method="POST" style="display:contents">
+                <button type="submit" class="btn-danger">Reset everything</button>
+            </form>
+            <button type="button" class="btn-cancel" id="closeResetModal">Cancel</button>
         </div>
     </div>
 </div>
+
+<script>
+document.querySelectorAll('.sheet-close').forEach(function(btn) {
+    btn.addEventListener('click', function() { closeSheet(this.dataset.sheet); });
+});
+document.querySelectorAll('.sheet-overlay').forEach(function(overlay) {
+    overlay.addEventListener('click', function(e) {
+        if (e.target === this) closeSheet(this.id);
+    });
+});
+
+document.getElementById('manageCategoriesBtn').addEventListener('click', function() {
+    openSheet('categoryMgmtSheet');
+});
+
+document.getElementById('resetBtn').addEventListener('click', function() {
+    document.getElementById('resetModal').classList.add('active');
+});
+document.getElementById('closeResetModal').addEventListener('click', function() {
+    document.getElementById('resetModal').classList.remove('active');
+});
+document.getElementById('resetModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.sheet-overlay.active').forEach(function(o) { closeSheet(o.id); });
+        document.getElementById('resetModal').classList.remove('active');
+    }
+});
+</script>
 
 {% endblock %}

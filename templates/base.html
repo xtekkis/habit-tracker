@@ -44,6 +44,23 @@
     </div>
     <script>
         lucide.createIcons();
+
+        // Global sheet helpers (used by index, settings, and any page with sheets)
+        function openSheet(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.classList.add('active');
+            document.documentElement.classList.add('no-scroll');
+        }
+        function closeSheet(id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+            if (!document.querySelector('.sheet-overlay.active')) {
+                document.documentElement.classList.remove('no-scroll');
+            }
+        }
+
+        // Active tab
         (function() {
             var path = window.location.pathname;
             if (path === '/') {
@@ -56,18 +73,21 @@
                 document.getElementById('tab-settings').classList.add('active');
             }
         })();
+
         // FAB wired here so tab-bar is already in DOM
         (function() {
             var fab = document.getElementById('tab-fab');
             if (!fab) return;
             fab.addEventListener('click', function() {
                 var addSheet = document.getElementById('addSheet');
-                if (addSheet && typeof openSheet === 'function') {
+                if (addSheet) {
                     openSheet('addSheet');
                     setTimeout(function() {
                         var input = addSheet.querySelector('input[name="name"]');
                         if (input) input.focus();
                     }, 350);
+                } else {
+                    window.location.href = '/?add=1';
                 }
             });
         })();
