@@ -13,7 +13,9 @@
 <body>
     <div class="app-shell">
         <header class="top-bar">
+            {% block top_bar_content %}
             <h1 class="app-title">{% block page_title %}Today{% endblock %}</h1>
+            {% endblock %}
         </header>
         <main class="page-content">
             {% block content %}{% endblock %}
@@ -30,11 +32,11 @@
             <button class="tab-fab" id="tab-fab" aria-label="Add habit">
                 <i data-lucide="plus"></i>
             </button>
-            <a href="#" class="tab-btn tab-disabled" id="tab-calendar">
+            <a href="/calendar" class="tab-btn" id="tab-calendar">
                 <i data-lucide="calendar"></i>
                 <span>Calendar</span>
             </a>
-            <a href="#" class="tab-btn tab-disabled" id="tab-settings">
+            <a href="/settings" class="tab-btn" id="tab-settings">
                 <i data-lucide="settings"></i>
                 <span>Settings</span>
             </a>
@@ -48,6 +50,10 @@
                 document.getElementById('tab-today').classList.add('active');
             } else if (path.startsWith('/weekly') || path.startsWith('/monthly')) {
                 document.getElementById('tab-insights').classList.add('active');
+            } else if (path === '/calendar' || (path.startsWith('/habit/') && path.endsWith('/calendar'))) {
+                document.getElementById('tab-calendar').classList.add('active');
+            } else if (path === '/settings') {
+                document.getElementById('tab-settings').classList.add('active');
             }
         })();
         // FAB wired here so tab-bar is already in DOM

@@ -103,7 +103,11 @@
 
     </div>
     {% else %}
-    <p class="empty">No habits yet. Tap + to add one.</p>
+    <div class="empty-state">
+        <div class="empty-state-icon"><i data-lucide="clipboard-list"></i></div>
+        <p class="empty-state-title">No habits yet</p>
+        <p class="empty-state-sub">Tap <strong>+</strong> to add your first habit</p>
+    </div>
     {% endfor %}
 </section>
 

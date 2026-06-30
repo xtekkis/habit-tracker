@@ -171,9 +171,25 @@ def delete_category(category_id):
     conn.close()
     return redirect(url_for("index"))
 
+@app.route("/calendar")
+def calendar_index():
+    conn = get_connection()
+    habits = conn.execute("""
+        SELECT h.*, c.name as category_name
+        FROM habits h
+        LEFT JOIN categories c ON h.category_id = c.id
+        ORDER BY h.created_at DESC
+    """).fetchall()
+    conn.close()
+    return render_template("calendar_index.html", habits=habits)
+
+@app.route("/settings")
+def settings():
+    return render_template("settings.html")
+
 @app.route("/habit/<int:habit_id>/calendar")
 def habit_calendar(habit_id):
-    import calendar
+    import calendar as cal_module
     from datetime import date
 
     habit = get_habit(habit_id)
@@ -190,7 +206,7 @@ def habit_calendar(habit_id):
         year, month = today.year, today.month
 
     logs = get_logs_for_month(habit_id, year, month)
-    weeks = calendar.monthcalendar(year, month)
+    weeks = cal_module.monthcalendar(year, month)
     month_name = date(year, month, 1).strftime("%B %Y")
 
     if month == 1:
@@ -206,16 +222,24 @@ def habit_calendar(habit_id):
     is_current = (year == today.year and month == today.month)
     today_day = today.day if is_current else None
 
+    logged_days = set(int(d.split('-')[2]) for d in logs.keys())
+    month_logged = len(logs)
+    month_days = today.day if is_current else cal_module.monthrange(year, month)[1]
+    streak = get_streak(habit_id)
+
     return render_template("calendar.html",
         habit=habit,
         weeks=weeks,
-        logs=logs,
+        logged_days=logged_days,
         month_name=month_name,
         year=year,
         month=month,
         prev_month=prev_month,
         next_month=next_month,
-        today_day=today_day
+        today_day=today_day,
+        streak=streak,
+        month_logged=month_logged,
+        month_days=month_days,
     )
 
 @app.route("/export/csv")

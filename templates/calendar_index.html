@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Calendar - Habit Tracker{% endblock %}
+{% block page_title %}Calendar{% endblock %}
+
+{% block content %}
+
+{% if habits %}
+<p class="section-label">Choose a habit</p>
+<div class="habit-list">
+    {% for habit in habits %}
+    <a href="/habit/{{ habit['id'] }}/calendar" class="habit-card habit-card-link">
+        <div class="habit-tile {% if habit['category_id'] %}tile-{{ (habit['category_id'] - 1) % 8 }}{% else %}tile-none{% endif %}">
+            <span class="habit-tile-letter">{{ habit['name'][0] | upper }}</span>
+        </div>
+        <div class="habit-body">
+            <div class="habit-name-row">
+                <span class="habit-name">{{ habit['name'] }}</span>
+                {% if habit['category_name'] %}
+                <span class="category-badge">{{ habit['category_name'] }}</span>
+                {% endif %}
+            </div>
+        </div>
+        <i data-lucide="chevron-right" class="habit-card-arrow"></i>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon"><i data-lucide="calendar"></i></div>
+    <p class="empty-state-title">No habits yet</p>
+    <p class="empty-state-sub">Add one from the Today tab first.</p>
+</div>
+{% endif %}
+
+{% endblock %}

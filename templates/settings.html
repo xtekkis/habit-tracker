@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Settings - Habit Tracker{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+
+<p class="section-label">Data</p>
+<div class="settings-list">
+    <a href="/export/csv" class="settings-item">
+        <div class="settings-item-icon"><i data-lucide="download"></i></div>
+        <div class="settings-item-body">
+            <span class="settings-item-label">Export data</span>
+            <span class="settings-item-sub">Download all habits and logs as CSV</span>
+        </div>
+        <i data-lucide="chevron-right" class="settings-item-arrow"></i>
+    </a>
+</div>
+
+<p class="section-label">About</p>
+<div class="settings-list">
+    <div class="settings-item settings-item-static">
+        <div class="settings-item-icon"><i data-lucide="info"></i></div>
+        <div class="settings-item-body">
+            <span class="settings-item-label">Habit Tracker</span>
+            <span class="settings-item-sub">Version 1.0 · Flask + SQLite</span>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,43 +1,57 @@
 {% extends "base.html" %}
 {% block title %}{{ habit["name"] }} - Calendar{% endblock %}
-{% block page_title %}{{ habit["name"] }}{% endblock %}
+
+{% block top_bar_content %}
+<a href="/calendar" class="back-btn"><i data-lucide="chevron-left"></i></a>
+<div class="habit-cal-header">
+    <span class="habit-cal-label">Habit</span>
+    <h1 class="habit-cal-name">{{ habit["name"] }}</h1>
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="calendar-header">
-    <a href="/">← Back</a>
-    <h2>{{ habit["name"] }}</h2>
+
+<div class="cal-month-nav">
+    <a href="/habit/{{ habit['id'] }}/calendar?month={{ prev_month }}" class="cal-nav-arrow">
+        <i data-lucide="chevron-left"></i>
+    </a>
+    <span class="cal-month-name">{{ month_name }}</span>
+    <a href="/habit/{{ habit['id'] }}/calendar?month={{ next_month }}" class="cal-nav-arrow">
+        <i data-lucide="chevron-right"></i>
+    </a>
 </div>
 
-<div class="calendar-nav">
-    <a class="nav-arrow" href="/habit/{{ habit['id'] }}/calendar?month={{ prev_month }}">&#8592;</a>
-    <span class="month-label">{{ month_name }}</span>
-    <a class="nav-arrow" href="/habit/{{ habit['id'] }}/calendar?month={{ next_month }}">&#8594;</a>
-</div>
-
-<div class="calendar-grid">
-    <div class="calendar-day-name">Mon</div>
-    <div class="calendar-day-name">Tue</div>
-    <div class="calendar-day-name">Wed</div>
-    <div class="calendar-day-name">Thu</div>
-    <div class="calendar-day-name">Fri</div>
-    <div class="calendar-day-name">Sat</div>
-    <div class="calendar-day-name">Sun</div>
+<div class="cal-grid">
+    {% for label in ['M','T','W','T','F','S','S'] %}
+    <div class="cal-day-header">{{ label }}</div>
+    {% endfor %}
 
     {% for week in weeks %}
         {% for day in week %}
-            {% if day == 0 %}
-            <div class="calendar-cell empty"></div>
-            {% else %}
-                {% set date_str = "%04d-%02d-%02d"|format(year, month, day) %}
-                {% set note = logs.get(date_str) %}
-                <div class="calendar-cell {% if note is not none %}logged{% endif %} {% if today_day == day %}today{% endif %}">
-                    <span class="day-number">{{ day }}</span>
-                    {% if note %}
-                    <span class="day-note">{{ note }}</span>
-                    {% endif %}
-                </div>
-            {% endif %}
+        {% if day == 0 %}
+        <div class="cal-day-empty"></div>
+        {% else %}
+        <div class="cal-day {% if day in logged_days %}cal-day-logged{% endif %} {% if today_day == day %}cal-day-today{% endif %}">
+            {{ day }}
+        </div>
+        {% endif %}
         {% endfor %}
     {% endfor %}
 </div>
+
+<div class="cal-stats">
+    <div class="cal-stats-left">
+        <i data-lucide="flame" class="cal-stats-flame"></i>
+        <div>
+            <div class="cal-stats-label">Current streak</div>
+            <div class="cal-stats-value">{{ streak }} days</div>
+        </div>
+    </div>
+    <div class="cal-stats-divider"></div>
+    <div class="cal-stats-right">
+        <div class="cal-stats-label">This month</div>
+        <div class="cal-stats-value">{{ month_logged }} / {{ month_days }}</div>
+    </div>
+</div>
+
 {% endblock %}
