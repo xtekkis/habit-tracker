@@ -1,37 +1,48 @@
 /* Design tokens */
 
 :root {
-    --primary:        #F97316;
-    --primary-hover:  #EA6C0A;
-    --primary-soft:   #FFF7ED;
-    --primary-muted:  rgba(249, 115, 22, 0.12);
+    /* Brand */
+    --primary:        #EC7A2F;
+    --primary-hover:  #D9661C;
+    --primary-soft:   #FCEBDC;
+    --primary-muted:  rgba(236, 122, 47, 0.12);
+    --espresso:       #432B1E;
 
-    --bg:         #FFFBF5;
+    /* Surfaces */
+    --bg:         #FBF4EC;
+    --bg-tint:    #F7E9DA;
     --surface:    #FFFFFF;
-    --surface-2:  #F9F5F0;
+    --surface-2:  #FAF3EB;
 
-    --text:       #1C1917;
-    --text-muted: #78716C;
-    --text-faint: #A8A29E;
+    /* Text (warm, never pure black) */
+    --text:       #2B2017;
+    --text-muted: #6E6056;
+    --text-faint: #A89C8E;
 
-    --border:       #E7E5E4;
-    --border-strong:#D6D3D1;
+    /* Lines */
+    --border:       #EEE4D8;
+    --border-strong:#D8CBBB;
 
-    --success:      #22C55E;
-    --success-soft: rgba(34, 197, 94, 0.10);
-    --danger:       #EF4444;
+    /* Feedback */
+    --success:      #5E9E5B;
+    --success-soft: rgba(94, 158, 91, 0.10);
+    --danger:       #C9533B;
 
+    /* Radii */
     --radius-sm:   8px;
     --radius-md:   12px;
     --radius-lg:   16px;
-    --radius-full: 100px;
+    --radius-full: 999px;
 
+    /* Layout */
     --top-h:  56px;
     --tab-h:  64px;
 
-    --shadow-sm:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md:  0 4px 12px rgba(0,0,0,0.08);
-    --shadow-fab: 0 4px 16px rgba(249,115,22,0.40);
+    /* Shadows (warm brown-tinted) */
+    --shadow-sm:  0 1px 2px rgba(67,43,30,.05);
+    --shadow-md:  0 6px 20px rgba(67,43,30,.07);
+    --shadow-lg:  0 12px 32px rgba(67,43,30,.10);
+    --shadow-fab: 0 8px 20px rgba(67,43,30,.28);
 }
 
 /* Reset */
@@ -578,15 +589,15 @@ button:active {
     text-transform: uppercase;
 }
 
-.tile-none { background: #A8A29E; }
-.tile-0    { background: #EF4444; }
-.tile-1    { background: #3B82F6; }
-.tile-2    { background: #8B5CF6; }
-.tile-3    { background: #22C55E; }
-.tile-4    { background: #F59E0B; }
-.tile-5    { background: #EC4899; }
-.tile-6    { background: #14B8A6; }
-.tile-7    { background: #F97316; }
+.tile-none { background: #C9BCAD; }
+.tile-0    { background: #D96A34; }  /* clay        */
+.tile-1    { background: #8E9B4B; }  /* olive       */
+.tile-2    { background: #E8A93C; }  /* amber       */
+.tile-3    { background: #DD8FBE; }  /* blush       */
+.tile-4    { background: #C56B4A; }  /* terracotta  */
+.tile-5    { background: #7C9082; }  /* sage        */
+.tile-6    { background: #B58463; }  /* mocha       */
+.tile-7    { background: #5A3A2A; }  /* espresso    */
 
 /* Habit body */
 
