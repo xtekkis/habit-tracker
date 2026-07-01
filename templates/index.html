@@ -50,25 +50,20 @@
         <div class="habit-body">
             <div class="habit-name-row">
                 <span class="habit-name">{{ habit["name"] }}</span>
-                {% if habit["category_name"] %}
-                <span class="category-badge">{{ habit["category_name"] }}</span>
+                {% if streaks[habit["id"]] > 0 %}
+                <span class="streak-inline"><i data-lucide="flame"></i>{{ streaks[habit["id"]] }}</span>
                 {% endif %}
             </div>
             {% set count = weekly_counts.get(habit["id"], 0) %}
             <div class="progress-bar">
-                <div class="progress-fill" data-width="{{ (count / 7 * 100) | int }}"></div>
+                <div class="progress-fill {% if habit['category_id'] %}tile-{{ (habit['category_id'] - 1) % 8 }}{% else %}tile-none{% endif %}" data-width="{{ (count / 7 * 100) | int }}"></div>
             </div>
-            <span class="progress-label">{{ count }}/7 this week</span>
             {% if todays_notes.get(habit["id"]) %}
             <span class="todays-note">{{ todays_notes[habit["id"]] }}</span>
             {% endif %}
         </div>
 
         <div class="habit-right">
-            <div class="streak-pill {% if streaks[habit['id']] > 0 %}streak-active{% endif %}">
-                <i data-lucide="flame"></i>
-                <span>{{ streaks[habit["id"]] }}</span>
-            </div>
             {% if habit["id"] in logged_today %}
             <button class="check-btn check-done" disabled>
                 <i data-lucide="check"></i>
@@ -149,14 +144,14 @@
             </div>
 
             <label class="field-label">Category</label>
-            <select name="category_id">
-                <option value="">No category</option>
+            <input type="hidden" name="category_id" id="addCatInput" value="">
+            <div class="cat-pills" id="addCatPills">
+                <button type="button" class="cat-pill selected" data-value="">None</button>
                 {% for cat in categories %}
-                <option value="{{ cat['id'] }}">{{ cat['name'] }}</option>
+                <button type="button" class="cat-pill" data-value="{{ cat['id'] }}">{{ cat['name'] }}</button>
                 {% endfor %}
-            </select>
-
-            <button type="button" class="btn-new-category sheet-open" data-sheet="categorySheet">+ New category</button>
+                <button type="button" class="cat-pill cat-pill-new sheet-open" data-sheet="categorySheet">+ New</button>
+            </div>
 
             <button type="submit" class="btn-sheet-submit">Add habit</button>
         </form>
@@ -188,14 +183,14 @@
             </div>
 
             <label class="field-label">Category</label>
-            <select name="category_id" id="editSheetCategory">
-                <option value="">No category</option>
+            <input type="hidden" name="category_id" id="editCatInput" value="">
+            <div class="cat-pills" id="editCatPills">
+                <button type="button" class="cat-pill" data-value="">None</button>
                 {% for cat in categories %}
-                <option value="{{ cat['id'] }}">{{ cat['name'] }}</option>
+                <button type="button" class="cat-pill" data-value="{{ cat['id'] }}">{{ cat['name'] }}</button>
                 {% endfor %}
-            </select>
-
-            <button type="button" class="btn-new-category sheet-open" data-sheet="categorySheet">+ New category</button>
+                <button type="button" class="cat-pill cat-pill-new sheet-open" data-sheet="categorySheet">+ New</button>
+            </div>
 
             <button type="submit" class="btn-sheet-submit">Save changes</button>
         </form>
@@ -264,13 +259,35 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+// Cat pill selection — add sheet
+document.querySelectorAll('#addCatPills .cat-pill:not(.cat-pill-new)').forEach(function(pill) {
+    pill.addEventListener('click', function() {
+        document.querySelectorAll('#addCatPills .cat-pill').forEach(function(p) { p.classList.remove('selected'); });
+        this.classList.add('selected');
+        document.getElementById('addCatInput').value = this.dataset.value;
+    });
+});
+
+// Cat pill selection — edit sheet
+document.querySelectorAll('#editCatPills .cat-pill:not(.cat-pill-new)').forEach(function(pill) {
+    pill.addEventListener('click', function() {
+        document.querySelectorAll('#editCatPills .cat-pill').forEach(function(p) { p.classList.remove('selected'); });
+        this.classList.add('selected');
+        document.getElementById('editCatInput').value = this.dataset.value;
+    });
+});
+
 // Edit link → edit sheet
 document.querySelectorAll('.edit-link').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.preventDefault();
         document.getElementById('editSheetForm').action = '/edit/' + this.dataset.id;
         document.getElementById('editSheetInput').value = this.dataset.name;
-        document.getElementById('editSheetCategory').value = this.dataset.category || '';
+        var selectedCat = this.dataset.category || '';
+        document.getElementById('editCatInput').value = selectedCat;
+        document.querySelectorAll('#editCatPills .cat-pill:not(.cat-pill-new)').forEach(function(p) {
+            p.classList.toggle('selected', p.dataset.value === selectedCat);
+        });
         var repeat = this.dataset.repeat || '1111111';
         document.querySelectorAll('#editDayPicker .day-checkbox').forEach(function(cb, i) {
             cb.checked = repeat[i] === '1';
