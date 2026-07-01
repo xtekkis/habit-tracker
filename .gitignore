@@ -64,6 +64,10 @@ db.sqlite3-journal
 # Habit tracker
 habits.db
 
+# Claude Code local skills (personal tooling, not part of the project)
+.claude/commands/
+.claude/skills/
+
 # Flask stuff:
 instance/
 .webassets-cache
