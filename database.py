@@ -53,6 +53,11 @@ def init_db():
     except Exception:
         pass
 
+    try:
+        cursor.execute("ALTER TABLE habits ADD COLUMN reminder_time TEXT DEFAULT NULL")
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
 

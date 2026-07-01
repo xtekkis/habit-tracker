@@ -1662,12 +1662,68 @@ html.no-scroll {
     box-shadow: 0 1px 4px rgba(0,0,0,0.20);
 }
 
+.settings-toggle:not(.settings-toggle-on) {
+    background: var(--border-strong);
+    cursor: pointer;
+}
+
+.settings-toggle:not(.settings-toggle-on)::after {
+    left: 3px;
+}
+
 .settings-toggle-on {
     background: var(--primary);
+    cursor: pointer;
 }
 
 .settings-toggle-on::after {
     right: 3px;
+}
+
+/* Reminder row (in add/edit sheets) */
+
+.reminder-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0 10px;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+}
+
+.reminder-row-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.reminder-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: var(--primary-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.reminder-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.8;
+}
+
+.reminder-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.reminder-time-wrap {
+    display: none;
+    padding-bottom: 4px;
 }
 
 .btn-reset {

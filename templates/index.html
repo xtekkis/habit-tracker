@@ -85,7 +85,8 @@
                        data-id="{{ habit['id'] }}"
                        data-name="{{ habit['name'] }}"
                        data-category="{{ habit['category_id'] or '' }}"
-                       data-repeat="{{ habit['repeat_days'] or '1111111' }}">Edit</a>
+                       data-repeat="{{ habit['repeat_days'] or '1111111' }}"
+                       data-reminder="{{ habit['reminder_time'] or '' }}">Edit</a>
                     <a class="overflow-item" href="/habit/{{ habit['id'] }}/calendar">Calendar</a>
                     <a class="overflow-item overflow-danger open-delete" href="#"
                        data-id="{{ habit['id'] }}"
@@ -153,6 +154,17 @@
                 <button type="button" class="cat-pill cat-pill-new sheet-open" data-sheet="categorySheet">+ New</button>
             </div>
 
+            <div class="reminder-row">
+                <div class="reminder-row-left">
+                    <div class="reminder-icon"><i data-lucide="bell"></i></div>
+                    <span class="reminder-label">Reminder</span>
+                </div>
+                <span class="settings-toggle" id="addReminderToggle" role="button"></span>
+            </div>
+            <div class="reminder-time-wrap" id="addReminderTimeWrap">
+                <input type="time" name="reminder_time" id="addReminderTime" value="08:00" disabled>
+            </div>
+
             <button type="submit" class="btn-sheet-submit">Add habit</button>
         </form>
     </div>
@@ -192,6 +204,17 @@
                 <button type="button" class="cat-pill cat-pill-new sheet-open" data-sheet="categorySheet">+ New</button>
             </div>
 
+            <div class="reminder-row">
+                <div class="reminder-row-left">
+                    <div class="reminder-icon"><i data-lucide="bell"></i></div>
+                    <span class="reminder-label">Reminder</span>
+                </div>
+                <span class="settings-toggle" id="editReminderToggle" role="button"></span>
+            </div>
+            <div class="reminder-time-wrap" id="editReminderTimeWrap">
+                <input type="time" name="reminder_time" id="editReminderTime" value="08:00" disabled>
+            </div>
+
             <button type="submit" class="btn-sheet-submit">Save changes</button>
         </form>
     </div>
@@ -214,6 +237,8 @@
         </form>
     </div>
 </div>
+
+<script type="application/json" id="reminder-data">{{ pending_reminders|tojson }}</script>
 
 <script>
 // Staggered card entrance
@@ -292,6 +317,21 @@ document.querySelectorAll('.edit-link').forEach(function(link) {
         document.querySelectorAll('#editDayPicker .day-checkbox').forEach(function(cb, i) {
             cb.checked = repeat[i] === '1';
         });
+        var reminderTime = this.dataset.reminder || '';
+        var editToggle = document.getElementById('editReminderToggle');
+        var editTimeWrap = document.getElementById('editReminderTimeWrap');
+        var editTimeInput = document.getElementById('editReminderTime');
+        if (reminderTime) {
+            editToggle.classList.add('settings-toggle-on');
+            editTimeWrap.style.display = 'block';
+            editTimeInput.disabled = false;
+            editTimeInput.value = reminderTime;
+        } else {
+            editToggle.classList.remove('settings-toggle-on');
+            editTimeWrap.style.display = 'none';
+            editTimeInput.disabled = true;
+            editTimeInput.value = '08:00';
+        }
         openSheet('editSheet');
         setTimeout(function() {
             document.getElementById('editSheetInput').focus();
@@ -353,6 +393,43 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
         });
     });
 });
+
+// Reminder toggle helper
+function setupReminderToggle(toggleId, timeWrapId, timeInputId) {
+    var toggle = document.getElementById(toggleId);
+    var timeWrap = document.getElementById(timeWrapId);
+    var timeInput = document.getElementById(timeInputId);
+    if (!toggle) return;
+    toggle.addEventListener('click', function() {
+        var turningOn = !toggle.classList.contains('settings-toggle-on');
+        toggle.classList.toggle('settings-toggle-on', turningOn);
+        timeWrap.style.display = turningOn ? 'block' : 'none';
+        timeInput.disabled = !turningOn;
+        if (turningOn && 'Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    });
+}
+setupReminderToggle('addReminderToggle', 'addReminderTimeWrap', 'addReminderTime');
+setupReminderToggle('editReminderToggle', 'editReminderTimeWrap', 'editReminderTime');
+
+// Reminder scheduling — fire notifications for habits not yet logged today
+var pendingReminders = JSON.parse(document.getElementById('reminder-data').textContent);
+(function() {
+    if (!('Notification' in window) || Notification.permission !== 'granted' || !pendingReminders.length) return;
+    var now = new Date();
+    pendingReminders.forEach(function(h) {
+        var parts = h.time.split(':');
+        var fireAt = new Date();
+        fireAt.setHours(parseInt(parts[0]), parseInt(parts[1]), 0, 0);
+        var ms = fireAt - now;
+        if (ms > 0) {
+            setTimeout(function() {
+                new Notification('Time to: ' + h.name, { body: 'Tap to open your habits' });
+            }, ms);
+        }
+    });
+})();
 
 // Auto-open add sheet when navigated from another tab via FAB (?add=1)
 // Deferred with setTimeout so base.html's openSheet/closeSheet are defined first,

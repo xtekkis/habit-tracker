@@ -40,6 +40,11 @@ def index():
     weekly_counts = get_weekly_counts()
     categories = get_categories()
     todays_notes = get_todays_notes()
+    pending_reminders = [
+        {"name": h["name"], "time": h["reminder_time"]}
+        for h in habits
+        if h["reminder_time"] and h["id"] not in logged_today
+    ]
     return render_template("index.html",
         habits=habits,
         streaks=streaks,
@@ -49,7 +54,8 @@ def index():
         todays_notes=todays_notes,
         week_days=week_days,
         day_name=day_name,
-        day_month=day_month
+        day_month=day_month,
+        pending_reminders=pending_reminders,
     )
 
 @app.route("/add", methods=["POST"])
@@ -57,10 +63,14 @@ def add_habit():
     name = request.form.get("name", "").strip()[:100]
     category_id = request.form.get("category_id") or None
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
+    reminder_time = request.form.get("reminder_time") or None
     if name:
         conn = get_connection()
         try:
-            conn.execute("INSERT INTO habits (name, category_id, repeat_days) VALUES (?, ?, ?)", (name, category_id, repeat_days))
+            conn.execute(
+                "INSERT INTO habits (name, category_id, repeat_days, reminder_time) VALUES (?, ?, ?, ?)",
+                (name, category_id, repeat_days, reminder_time)
+            )
             conn.commit()
         except Exception:
             pass
@@ -139,10 +149,14 @@ def edit_habit(habit_id):
     name = request.form.get("name", "").strip()[:100]
     category_id = request.form.get("category_id") or None
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
+    reminder_time = request.form.get("reminder_time") or None
     if name:
         conn = get_connection()
         try:
-            conn.execute("UPDATE habits SET name = ?, category_id = ?, repeat_days = ? WHERE id = ?", (name, category_id, repeat_days, habit_id))
+            conn.execute(
+                "UPDATE habits SET name = ?, category_id = ?, repeat_days = ?, reminder_time = ? WHERE id = ?",
+                (name, category_id, repeat_days, reminder_time, habit_id)
+            )
             conn.commit()
         except Exception:
             pass
