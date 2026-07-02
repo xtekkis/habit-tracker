@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month
+from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days
 
 app = Flask(__name__)
 
@@ -137,11 +137,16 @@ def weekly_summary():
     month_possible = len(habits) * today.day
     month_rate = int(month_total / month_possible * 100) if month_possible > 0 else 0
 
+    habit_count = len(habits)
+    perfect_week = count_perfect_days(week_start.isoformat(), today.isoformat(), habit_count)
+    perfect_month = count_perfect_days(month_start.isoformat(), today.isoformat(), habit_count)
+
     return render_template("weekly.html",
         habit_data=habit_data,
         best_streak=best_streak,
         week_total=week_total, week_active=week_active, week_rate=week_rate,
         month_total=month_total, month_active=month_active, month_rate=month_rate,
+        perfect_week=perfect_week, perfect_month=perfect_month,
     )
 
 @app.route("/edit/<int:habit_id>", methods=["POST"])

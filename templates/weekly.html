@@ -26,6 +26,16 @@
     </div>
 </div>
 
+<div class="insight-highlight">
+    <div class="insight-highlight-icon">
+        <i data-lucide="star"></i>
+    </div>
+    <div class="insight-highlight-body">
+        <span class="insight-highlight-value" data-week="{{ perfect_week }}" data-month="{{ perfect_month }}">{{ perfect_week }}</span>
+        <span class="insight-highlight-label">Perfect days — every habit done</span>
+    </div>
+</div>
+
 <div class="stat-grid">
     <div class="stat-card">
         <span class="stat-value">{{ best_streak }}</span>
@@ -60,6 +70,9 @@ function applyPeriod(animate) {
     document.querySelectorAll('.stat-value[data-week]').forEach(function(el) {
         var val = el.dataset[period];
         el.textContent = el.classList.contains('stat-rate') ? val + '%' : val;
+    });
+    document.querySelectorAll('.insight-highlight-value[data-week]').forEach(function(el) {
+        el.textContent = el.dataset[period];
     });
     document.querySelectorAll('.bar-count[data-week]').forEach(function(el) {
         var val = parseInt(el.dataset[period]);

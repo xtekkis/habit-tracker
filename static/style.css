@@ -1118,6 +1118,56 @@ tbody td {
     text-align: center;
 }
 
+/* Insights perfect-days highlight */
+
+.insight-highlight {
+    background: var(--primary-soft);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.insight-highlight-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.insight-highlight-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 1.8;
+}
+
+.insight-highlight-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.insight-highlight-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -1px;
+    line-height: 1;
+}
+
+.insight-highlight-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
 .insights-empty {
     text-align: center;
     padding: 48px 0;

@@ -61,6 +61,22 @@ def init_db():
     conn.commit()
     conn.close()
 
+def count_perfect_days(start, end, habit_count):
+    if habit_count == 0:
+        return 0
+    conn = get_connection()
+    result = conn.execute("""
+        SELECT COUNT(*) FROM (
+            SELECT logged_date
+            FROM logs
+            WHERE logged_date BETWEEN ? AND ?
+            GROUP BY logged_date
+            HAVING COUNT(DISTINCT habit_id) = ?
+        )
+    """, (start, end, habit_count)).fetchone()[0]
+    conn.close()
+    return result
+
 def get_habit(habit_id):
     conn = get_connection()
     habit = conn.execute("SELECT * FROM habits WHERE id = ?", (habit_id,)).fetchone()
