@@ -92,9 +92,9 @@ body {
 
 .app-title {
     font-size: 18px;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text);
-    letter-spacing: -0.3px;
+    letter-spacing: -0.4px;
 }
 
 .page-content {
@@ -162,12 +162,12 @@ body {
     width: 52px;
     height: 52px;
     flex-shrink: 0;
-    background: var(--text);
+    background: var(--espresso);
     border: none;
     border-radius: 50%;
     color: #fff;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    box-shadow: var(--shadow-fab);
     transition: background 0.15s, transform 0.15s;
 }
 
@@ -179,7 +179,7 @@ body {
 
 .tab-fab:active {
     transform: scale(0.92);
-    background: #3D3935;
+    background: #2B1A10;
 }
 
 /* Typography */
@@ -199,17 +199,19 @@ h2 {
 }
 
 .home-date {
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 500;
     color: var(--text-muted);
     margin-bottom: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0;
 }
 
 .week-strip {
     display: flex;
     justify-content: space-between;
+    background: var(--bg-tint);
+    border-radius: var(--radius-md);
+    padding: 12px 8px;
     margin-bottom: 20px;
 }
 
@@ -245,7 +247,7 @@ h2 {
 }
 
 .week-day-today .week-day-number {
-    background: var(--text);
+    background: var(--espresso);
     color: #fff;
     font-weight: 700;
 }
@@ -549,24 +551,24 @@ button:active {
 
 .habit-card {
     background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-md);
+    border: none;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
-    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    box-shadow: var(--shadow-md);
+    transition: box-shadow 0.2s, transform 0.2s;
     animation: slideUp 0.3s ease both;
 }
 
 .habit-card:hover {
-    border-color: var(--border-strong);
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
 }
 
 .habit-card.done {
-    border-color: var(--border);
+    opacity: 0.75;
 }
 
 /* Color tile */
