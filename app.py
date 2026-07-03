@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days, get_preferences, set_preference, get_week_start
+from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, get_recent_notes
 
 app = Flask(__name__)
 
@@ -278,6 +278,12 @@ def habit_calendar(habit_id):
     month_logged = len(logs)
     month_days = today.day if is_current else cal_module.monthrange(year, month)[1]
     streak = get_streak(habit_id)
+    best_streak = get_best_streak(habit_id)
+    raw_notes = get_recent_notes(habit_id)
+    recent_notes = [
+        {"date": f"{date.fromisoformat(n['date']).day} {date.fromisoformat(n['date']).strftime('%b')}", "notes": n["notes"]}
+        for n in raw_notes
+    ]
 
     return render_template("calendar.html",
         habit=habit,
@@ -290,6 +296,8 @@ def habit_calendar(habit_id):
         next_month=next_month,
         today_day=today_day,
         streak=streak,
+        best_streak=best_streak,
+        recent_notes=recent_notes,
         month_logged=month_logged,
         month_days=month_days,
     )

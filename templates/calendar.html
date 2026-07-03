@@ -49,9 +49,31 @@
     </div>
     <div class="cal-stats-divider"></div>
     <div class="cal-stats-right">
-        <div class="cal-stats-label">This month</div>
-        <div class="cal-stats-value">{{ month_logged }} / {{ month_days }}</div>
+        <div class="cal-stats-label">Best streak</div>
+        <div class="cal-stats-value">{{ best_streak }} days</div>
     </div>
 </div>
+
+<div class="cal-stats" style="margin-top: 10px;">
+    <div class="cal-stats-left">
+        <i data-lucide="calendar-check" class="cal-stats-flame"></i>
+        <div>
+            <div class="cal-stats-label">This month</div>
+            <div class="cal-stats-value">{{ month_logged }} / {{ month_days }}</div>
+        </div>
+    </div>
+</div>
+
+{% if recent_notes %}
+<p class="section-label" style="margin-top: 24px;">Notes</p>
+<div class="cal-notes">
+    {% for entry in recent_notes %}
+    <div class="cal-note-item">
+        <span class="cal-note-date">{{ entry["date"] }}</span>
+        <span class="cal-note-text">{{ entry["notes"] }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 {% endblock %}

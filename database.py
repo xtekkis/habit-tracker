@@ -109,6 +109,36 @@ def count_perfect_days(start, end, habit_count):
     conn.close()
     return result
 
+def get_best_streak(habit_id):
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT logged_date FROM logs WHERE habit_id = ? ORDER BY logged_date ASC",
+        (habit_id,)
+    ).fetchall()
+    conn.close()
+
+    if not rows:
+        return 0
+
+    dates = sorted(date.fromisoformat(row["logged_date"]) for row in rows)
+    best = current = 1
+    for i in range(1, len(dates)):
+        if (dates[i] - dates[i - 1]).days == 1:
+            current += 1
+            best = max(best, current)
+        elif (dates[i] - dates[i - 1]).days > 1:
+            current = 1
+    return best
+
+def get_recent_notes(habit_id, limit=8):
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT logged_date, notes FROM logs WHERE habit_id = ? AND notes IS NOT NULL AND notes != '' ORDER BY logged_date DESC LIMIT ?",
+        (habit_id, limit)
+    ).fetchall()
+    conn.close()
+    return [{"date": row["logged_date"], "notes": row["notes"]} for row in rows]
+
 def get_habit(habit_id):
     conn = get_connection()
     habit = conn.execute("SELECT * FROM habits WHERE id = ?", (habit_id,)).fetchone()
