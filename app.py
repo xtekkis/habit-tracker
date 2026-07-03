@@ -23,6 +23,9 @@ def index():
     )
     conn.close()
 
+    today_weekday = today_date.weekday()  # Mon=0..Sun=6
+    habits = [h for h in habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"]
+
     prefs = get_preferences()
     week_start = get_week_start(today_date, prefs["start_week"])
     letters = ['M','T','W','T','F','S','S']  # indexed by Python weekday: Mon=0..Sun=6
