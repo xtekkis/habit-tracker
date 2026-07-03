@@ -26,20 +26,21 @@
 
 <p class="section-label">Preferences</p>
 <div class="settings-list">
-    <div class="settings-item settings-item-static">
+    <form action="/preferences/start-week" method="POST" class="settings-item settings-item-static">
         <div class="settings-item-icon icon-muted"><i data-lucide="calendar-days"></i></div>
         <div class="settings-item-body">
             <span class="settings-item-label">Start week on</span>
         </div>
-        <span class="settings-item-value">Monday</span>
-    </div>
-    <div class="settings-item settings-item-static">
+        <input type="hidden" name="value" value="{{ 'sunday' if prefs['start_week'] == 'monday' else 'monday' }}">
+        <button type="submit" class="settings-item-value settings-item-value-btn">{{ prefs['start_week']|capitalize }}</button>
+    </form>
+    <form action="/preferences/toggle-streaks" method="POST" class="settings-item settings-item-static">
         <div class="settings-item-icon icon-flame"><i data-lucide="flame"></i></div>
         <div class="settings-item-body">
             <span class="settings-item-label">Show streaks</span>
         </div>
-        <span class="settings-toggle settings-toggle-on"></span>
-    </div>
+        <button type="submit" class="settings-toggle {{ 'settings-toggle-on' if prefs['show_streaks'] == '1' else '' }}"></button>
+    </form>
 </div>
 
 <p class="section-label">About</p>

@@ -50,7 +50,7 @@
         <div class="habit-body">
             <div class="habit-name-row">
                 <span class="habit-name">{{ habit["name"] }}</span>
-                {% if streaks[habit["id"]] > 0 %}
+                {% if show_streaks and streaks[habit["id"]] > 0 %}
                 <span class="streak-inline"><i data-lucide="flame"></i>{{ streaks[habit["id"]] }}</span>
                 {% endif %}
             </div>

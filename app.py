@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days
+from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days, get_preferences, set_preference, get_week_start
 
 app = Flask(__name__)
 
@@ -23,12 +23,14 @@ def index():
     )
     conn.close()
 
-    monday = today_date - timedelta(days=today_date.weekday())
+    prefs = get_preferences()
+    week_start = get_week_start(today_date, prefs["start_week"])
+    letters = ['M','T','W','T','F','S','S']  # indexed by Python weekday: Mon=0..Sun=6
     week_days = [
         {
-            'label': ['M','T','W','T','F','S','S'][i],
-            'number': (monday + timedelta(days=i)).day,
-            'is_today': (monday + timedelta(days=i)) == today_date
+            'label': letters[(week_start + timedelta(days=i)).weekday()],
+            'number': (week_start + timedelta(days=i)).day,
+            'is_today': (week_start + timedelta(days=i)) == today_date
         }
         for i in range(7)
     ]
@@ -37,7 +39,7 @@ def index():
     day_month = f"{today_date.day} {today_date.strftime('%B')}"
 
     streaks = {habit["id"]: get_streak(habit["id"]) for habit in habits}
-    weekly_counts = get_weekly_counts()
+    weekly_counts = get_weekly_counts(prefs["start_week"])
     categories = get_categories()
     todays_notes = get_todays_notes()
     pending_reminders = [
@@ -56,6 +58,7 @@ def index():
         day_name=day_name,
         day_month=day_month,
         pending_reminders=pending_reminders,
+        show_streaks=prefs["show_streaks"] == "1",
     )
 
 @app.route("/add", methods=["POST"])
@@ -93,11 +96,12 @@ def monthly_summary():
 
 @app.route("/weekly")
 def weekly_summary():
-    from datetime import date, timedelta
+    from datetime import date
     today = date.today()
-    week_start = today - timedelta(days=today.weekday())  # Monday of current week
+    prefs = get_preferences()
+    week_start = get_week_start(today, prefs["start_week"])
     month_start = today.replace(day=1)
-    days_elapsed_this_week = today.weekday() + 1  # 1 on Monday, 7 on Sunday
+    days_elapsed_this_week = (today - week_start).days + 1
 
     conn = get_connection()
     habits = conn.execute("SELECT id, name, category_id FROM habits ORDER BY created_at DESC").fetchall()
@@ -208,7 +212,22 @@ def calendar_index():
 @app.route("/settings")
 def settings():
     categories = get_categories()
-    return render_template("settings.html", categories=categories)
+    prefs = get_preferences()
+    return render_template("settings.html", categories=categories, prefs=prefs)
+
+@app.route("/preferences/toggle-streaks", methods=["POST"])
+def toggle_streaks():
+    prefs = get_preferences()
+    new_value = "0" if prefs["show_streaks"] == "1" else "1"
+    set_preference("show_streaks", new_value)
+    return redirect(url_for("settings"))
+
+@app.route("/preferences/start-week", methods=["POST"])
+def set_start_week():
+    value = request.form.get("value")
+    if value in ("monday", "sunday"):
+        set_preference("start_week", value)
+    return redirect(url_for("settings"))
 
 @app.route("/reset", methods=["POST"])
 def reset_all():

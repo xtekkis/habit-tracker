@@ -58,8 +58,40 @@ def init_db():
     except Exception:
         pass
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS preferences (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """)
+    cursor.execute("INSERT OR IGNORE INTO preferences (key, value) VALUES ('show_streaks', '1')")
+    cursor.execute("INSERT OR IGNORE INTO preferences (key, value) VALUES ('start_week', 'monday')")
+
     conn.commit()
     conn.close()
+
+def get_preferences():
+    conn = get_connection()
+    rows = conn.execute("SELECT key, value FROM preferences").fetchall()
+    conn.close()
+    prefs = {row["key"]: row["value"] for row in rows}
+    prefs.setdefault("show_streaks", "1")
+    prefs.setdefault("start_week", "monday")
+    return prefs
+
+def set_preference(key, value):
+    conn = get_connection()
+    conn.execute(
+        "INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (key, value)
+    )
+    conn.commit()
+    conn.close()
+
+def get_week_start(today, start_week):
+    if start_week == "sunday":
+        return today - timedelta(days=(today.weekday() + 1) % 7)
+    return today - timedelta(days=today.weekday())
 
 def count_perfect_days(start, end, habit_count):
     if habit_count == 0:
@@ -113,10 +145,10 @@ def get_categories():
     conn.close()
     return cats
 
-def get_weekly_counts():
+def get_weekly_counts(start_week="monday"):
     conn = get_connection()
     today = date.today()
-    week_start = today - timedelta(days=today.weekday())  # Monday of current week
+    week_start = get_week_start(today, start_week)
     rows = conn.execute(
         "SELECT habit_id, COUNT(*) as count FROM logs WHERE logged_date BETWEEN ? AND ? GROUP BY habit_id",
         (week_start.isoformat(), today.isoformat())
