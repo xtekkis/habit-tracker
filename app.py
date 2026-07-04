@@ -70,12 +70,14 @@ def add_habit():
     category_id = request.form.get("category_id") or None
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
     reminder_time = request.form.get("reminder_time") or None
+    icon = request.form.get("icon") or "check"
+    color = request.form.get("color") or "#D96A34"
     if name:
         conn = get_connection()
         try:
             conn.execute(
-                "INSERT INTO habits (name, category_id, repeat_days, reminder_time) VALUES (?, ?, ?, ?)",
-                (name, category_id, repeat_days, reminder_time)
+                "INSERT INTO habits (name, category_id, repeat_days, reminder_time, icon, color) VALUES (?, ?, ?, ?, ?, ?)",
+                (name, category_id, repeat_days, reminder_time, icon, color)
             )
             conn.commit()
         except Exception:
@@ -162,12 +164,14 @@ def edit_habit(habit_id):
     category_id = request.form.get("category_id") or None
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
     reminder_time = request.form.get("reminder_time") or None
+    icon = request.form.get("icon") or "check"
+    color = request.form.get("color") or "#D96A34"
     if name:
         conn = get_connection()
         try:
             conn.execute(
-                "UPDATE habits SET name = ?, category_id = ?, repeat_days = ?, reminder_time = ? WHERE id = ?",
-                (name, category_id, repeat_days, reminder_time, habit_id)
+                "UPDATE habits SET name = ?, category_id = ?, repeat_days = ?, reminder_time = ?, icon = ?, color = ? WHERE id = ?",
+                (name, category_id, repeat_days, reminder_time, icon, color, habit_id)
             )
             conn.commit()
         except Exception:

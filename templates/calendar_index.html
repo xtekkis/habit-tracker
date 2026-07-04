@@ -9,8 +9,8 @@
 <div class="habit-list">
     {% for habit in habits %}
     <a href="/habit/{{ habit['id'] }}/calendar" class="habit-card habit-card-link">
-        <div class="habit-tile {% if habit['category_id'] %}tile-{{ (habit['category_id'] - 1) % 8 }}{% else %}tile-none{% endif %}">
-            <span class="habit-tile-letter">{{ habit['name'][0] | upper }}</span>
+        <div class="habit-tile" style="background: {{ habit['color'] or '#D96A34' }}">
+            <i data-lucide="{{ habit['icon'] or 'check' }}"></i>
         </div>
         <div class="habit-body">
             <div class="habit-name-row">

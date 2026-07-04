@@ -58,6 +58,16 @@ def init_db():
     except Exception:
         pass
 
+    try:
+        cursor.execute("ALTER TABLE habits ADD COLUMN icon TEXT DEFAULT 'check'")
+    except Exception:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE habits ADD COLUMN color TEXT DEFAULT '#D96A34'")
+    except Exception:
+        pass
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS preferences (
             key TEXT PRIMARY KEY,
