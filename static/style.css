@@ -2067,3 +2067,141 @@ html.no-scroll {
     from { opacity: 0; }
     to   { opacity: 1; }
 }
+
+/* Habit tile icon */
+
+.habit-tile svg { width: 22px; height: 22px; color: #fff; stroke-width: 2; }
+
+/* Icon picker */
+
+.icon-picker {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.icon-opt {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1.5px solid var(--border);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background .15s, border-color .15s, color .15s;
+}
+
+.icon-opt svg { width: 20px; height: 20px; stroke-width: 1.8; }
+
+.icon-opt.selected {
+    background: var(--primary-soft);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* Color picker */
+
+.color-picker {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+
+.color-opt {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: box-shadow .15s;
+    flex-shrink: 0;
+}
+
+.color-opt.selected {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--text);
+}
+
+/* Desktop two-column layout (≥1024px) */
+
+@media (min-width: 1024px) {
+    .app-shell {
+        max-width: 1080px;
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 32px;
+        align-items: start;
+    }
+
+    .top-bar {
+        grid-column: 1 / -1;
+        max-width: none;
+    }
+
+    .tab-bar {
+        position: static;
+        transform: none;
+        flex-direction: column;
+        height: auto;
+        width: 100%;
+        max-width: none;
+        justify-content: flex-start;
+        align-items: stretch;
+        gap: 4px;
+        padding: 16px 12px;
+        border-top: none;
+        border-right: 1px solid var(--border);
+        border-radius: 0;
+        box-shadow: none;
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .tab-btn {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 12px 14px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: var(--radius-md);
+    }
+
+    .tab-btn.active { background: var(--primary-soft); }
+    .tab-btn svg { width: 20px; height: 20px; }
+
+    .tab-fab {
+        width: 100%;
+        height: 48px;
+        border-radius: var(--radius-md);
+        flex-direction: row;
+        gap: 8px;
+        order: -1;
+        margin-bottom: 8px;
+    }
+
+    .tab-fab::after {
+        content: 'New habit';
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .page-content {
+        grid-column: 2;
+        grid-row: 2;
+        padding: 24px 0 40px;
+    }
+
+    .habit-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-content: start;
+    }
+}
