@@ -820,6 +820,11 @@ button:active {
     animation: fadeIn 0.12s ease;
 }
 
+.overflow-menu.flip-up {
+    top: auto;
+    bottom: calc(100% + 4px);
+}
+
 .overflow-item {
     display: block;
     padding: 10px 14px;

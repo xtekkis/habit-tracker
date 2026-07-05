@@ -430,15 +430,21 @@ document.querySelectorAll('.overflow-btn').forEach(function(btn) {
         var menu = this.nextElementSibling;
         var isOpen = menu.classList.contains('open');
         document.querySelectorAll('.overflow-menu').forEach(function(m) {
-            m.classList.remove('open');
+            m.classList.remove('open', 'flip-up');
         });
-        if (!isOpen) menu.classList.add('open');
+        if (!isOpen) {
+            var btnRect = this.getBoundingClientRect();
+            if (window.innerHeight - btnRect.bottom < 140) {
+                menu.classList.add('flip-up');
+            }
+            menu.classList.add('open');
+        }
     });
 });
 
 document.addEventListener('click', function() {
     document.querySelectorAll('.overflow-menu').forEach(function(m) {
-        m.classList.remove('open');
+        m.classList.remove('open', 'flip-up');
     });
 });
 
