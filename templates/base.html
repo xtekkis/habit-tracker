@@ -9,6 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <link rel="stylesheet" href="/static/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#432B1E">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 </head>
 <body>
     <div class="app-shell">
@@ -44,6 +47,10 @@
     </div>
     <script>
         lucide.createIcons();
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
 
         // Global sheet helpers (used by index, settings, and any page with sheets)
         function openSheet(id) {
