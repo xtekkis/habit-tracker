@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
-from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, get_recent_notes
+from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, get_recent_notes, add_xp
 
 app = Flask(__name__)
 
@@ -348,13 +348,27 @@ def export_csv():
 
 @app.route("/log/<int:habit_id>", methods=["POST"])
 def log_habit(habit_id):
+    from datetime import date
     notes = request.form.get("notes", "").strip()[:500]
     conn = get_connection()
-    conn.execute(
+    cursor = conn.cursor()
+    cursor.execute(
         "INSERT OR IGNORE INTO logs (habit_id, notes) VALUES (?, ?)",
         (habit_id, notes or None)
     )
     conn.commit()
+    if cursor.rowcount > 0:
+        add_xp(10)
+        today = date.today()
+        today_weekday = today.weekday()
+        all_habits = conn.execute("SELECT id, repeat_days FROM habits").fetchall()
+        scheduled = [h for h in all_habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"]
+        if scheduled:
+            logged_count = conn.execute(
+                "SELECT COUNT(*) FROM logs WHERE logged_date = ?", (today.isoformat(),)
+            ).fetchone()[0]
+            if logged_count >= len(scheduled):
+                add_xp(25)
     conn.close()
     return redirect(url_for("index"))
 
