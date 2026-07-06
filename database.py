@@ -77,6 +77,15 @@ def init_db():
     cursor.execute("INSERT OR IGNORE INTO preferences (key, value) VALUES ('show_streaks', '1')")
     cursor.execute("INSERT OR IGNORE INTO preferences (key, value) VALUES ('start_week', 'monday')")
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS player_state (
+            id INTEGER PRIMARY KEY,
+            xp INTEGER NOT NULL DEFAULT 0,
+            level INTEGER NOT NULL DEFAULT 1
+        )
+    """)
+    cursor.execute("INSERT OR IGNORE INTO player_state (id, xp, level) VALUES (1, 0, 1)")
+
     conn.commit()
     conn.close()
 
@@ -228,6 +237,51 @@ def get_monthly_summary():
         summary.append({"name": habit["name"], "count": count, "out_of": days_in_month})
     conn.close()
     return summary
+
+def xp_for_level(level):
+    return 100 + (level - 1) * 50
+
+def rank_for_level(level):
+    if level >= 100: return "Evergreen"
+    if level >= 91:  return "Elder of the Grove"
+    if level >= 81:  return "Forest Guardian"
+    if level >= 71:  return "Ancient Oak"
+    if level >= 61:  return "Elder Oak"
+    if level >= 51:  return "Oak"
+    if level >= 41:  return "Young Tree"
+    if level >= 31:  return "Budding Tree"
+    if level >= 21:  return "Sapling"
+    if level >= 11:  return "Sprout"
+    return "Seed"
+
+def get_player_state():
+    conn = get_connection()
+    row = conn.execute("SELECT xp, level FROM player_state WHERE id = 1").fetchone()
+    conn.close()
+    level = row["level"]
+    xp = row["xp"]
+    needed = xp_for_level(level)
+    return {
+        "xp": xp,
+        "level": level,
+        "xp_needed": needed,
+        "pct": int(xp / needed * 100),
+        "rank": rank_for_level(level),
+    }
+
+def add_xp(amount):
+    conn = get_connection()
+    row = conn.execute("SELECT xp, level FROM player_state WHERE id = 1").fetchone()
+    xp = row["xp"] + amount
+    level = row["level"]
+    needed = xp_for_level(level)
+    while xp >= needed:
+        xp -= needed
+        level += 1
+        needed = xp_for_level(level)
+    conn.execute("UPDATE player_state SET xp = ?, level = ? WHERE id = 1", (xp, level))
+    conn.commit()
+    conn.close()
 
 def get_streak(habit_id):
     conn = get_connection()
