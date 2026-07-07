@@ -24,6 +24,16 @@
             {% block content %}{% endblock %}
         </main>
         <nav class="tab-bar">
+            <div class="xp-bar-wrap" id="xp-bar">
+                <div class="xp-bar-info">
+                    <span class="xp-level-badge">Lv {{ player.level }}</span>
+                    <span class="xp-rank-name">{{ player.rank }}</span>
+                    <span class="xp-count">{{ player.xp }}/{{ player.xp_needed }} XP</span>
+                </div>
+                <div class="xp-bar-track">
+                    <div class="xp-bar-fill" id="xp-bar-fill" style="width: {{ player.pct }}%"></div>
+                </div>
+            </div>
             <a href="/" class="tab-btn" id="tab-today">
                 <i data-lucide="home"></i>
                 <span>Today</span>

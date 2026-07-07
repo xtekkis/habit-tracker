@@ -35,8 +35,9 @@
     --radius-full: 999px;
 
     /* Layout */
-    --top-h:  56px;
-    --tab-h:  64px;
+    --top-h:    56px;
+    --tab-h:    64px;
+    --xp-bar-h: 40px;
 
     /* Shadows (warm brown-tinted) */
     --shadow-sm:  0 1px 2px rgba(67,43,30,.05);
@@ -99,7 +100,7 @@ body {
 
 .page-content {
     flex: 1;
-    padding: 20px 16px calc(var(--tab-h) + 24px);
+    padding: 20px 16px calc(var(--tab-h) + var(--xp-bar-h) + 24px);
 }
 
 /* Bottom tab bar */
@@ -111,10 +112,11 @@ body {
     transform: translateX(-50%);
     width: 100%;
     max-width: 440px;
-    height: var(--tab-h);
+    min-height: var(--tab-h);
     background: var(--surface);
     border-top: 1px solid var(--border);
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-around;
     padding: 0 8px;
@@ -2133,6 +2135,66 @@ html.no-scroll {
     box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--text);
 }
 
+/* XP bar */
+
+.xp-bar-wrap {
+    flex-basis: 100%;
+    order: -1;
+    padding: 7px 16px 6px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.xp-bar-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.xp-level-badge {
+    background: var(--espresso);
+    color: #fff;
+    border-radius: var(--radius-full);
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+}
+
+.xp-rank-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.xp-count {
+    color: var(--text-faint);
+    font-size: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.xp-bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.xp-bar-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 2px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Desktop two-column layout (≥1024px) */
 
 @media (min-width: 1024px) {
@@ -2153,6 +2215,7 @@ html.no-scroll {
         position: static;
         transform: none;
         flex-direction: column;
+        flex-wrap: nowrap;
         height: auto;
         width: 100%;
         max-width: none;
@@ -2166,6 +2229,14 @@ html.no-scroll {
         box-shadow: none;
         grid-column: 1;
         grid-row: 2;
+    }
+
+    .xp-bar-wrap {
+        flex-basis: auto;
+        order: -2;
+        padding: 10px 14px 8px;
+        border-bottom: 1px solid var(--border);
+        margin: -4px -4px 4px;
     }
 
     .tab-btn {
