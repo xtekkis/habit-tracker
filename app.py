@@ -1,7 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
-from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, get_recent_notes, add_xp
+from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, get_recent_notes, add_xp, get_player_state
 
 app = Flask(__name__)
+
+@app.context_processor
+def inject_player():
+    return {"player": get_player_state()}
 
 @app.route("/manifest.json")
 def pwa_manifest():
