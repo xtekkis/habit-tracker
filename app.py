@@ -123,7 +123,7 @@ def weekly_summary():
     days_elapsed_this_week = (today - week_start).days + 1
 
     conn = get_connection()
-    habits = conn.execute("SELECT id, name, category_id FROM habits ORDER BY created_at DESC").fetchall()
+    habits = conn.execute("SELECT id, name, category_id, color FROM habits ORDER BY created_at DESC").fetchall()
 
     habit_data = []
     for habit in habits:
@@ -135,11 +135,9 @@ def weekly_summary():
             "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
             (habit['id'], month_start.isoformat(), today.isoformat())
         ).fetchone()[0]
-        cat_id = habit['category_id']
-        tile_class = f'tile-{(cat_id - 1) % 8}' if cat_id else 'tile-none'
         habit_data.append({
             'name': habit['name'],
-            'tile_class': tile_class,
+            'color': habit['color'] or '#D96A34',
             'week_count': week_count,
             'week_pct': int(week_count / days_elapsed_this_week * 100),
             'month_count': month_count,

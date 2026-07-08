@@ -2202,7 +2202,8 @@ html.no-scroll {
         max-width: 1080px;
         display: grid;
         grid-template-columns: 280px 1fr;
-        gap: 32px;
+        column-gap: 32px;
+        row-gap: 8px;
         align-items: start;
     }
 
