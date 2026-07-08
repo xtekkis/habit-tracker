@@ -17,10 +17,10 @@
     {% set total = habits|length %}
     {% set done = logged_today|length %}
     {% set pct = ((done / total * 100) | int) if total > 0 else 0 %}
-    <div class="home-progress">
+    <div class="home-progress" data-total="{{ total }}">
         <div class="home-progress-header">
-            <span>{{ done }} of {{ total }} done today</span>
-            <span class="home-progress-pct">{{ pct }}%</span>
+            <span id="progress-text">{{ done }} of {{ total }} done today</span>
+            <span class="home-progress-pct" id="progress-pct">{{ pct }}%</span>
         </div>
         <div class="home-progress-track">
             <div class="home-progress-fill" data-width="{{ pct }}"></div>
@@ -56,7 +56,7 @@
             </div>
             {% set count = weekly_counts.get(habit["id"], 0) %}
             <div class="progress-bar">
-                <div class="progress-fill" style="background: {{ habit['color'] or '#D96A34' }}" data-width="{{ (count / 7 * 100) | int }}"></div>
+                <div class="progress-fill" style="background: {{ habit['color'] or '#D96A34' }}" id="bar-{{ habit['id'] }}" data-count="{{ count }}" data-width="{{ (count / 7 * 100) | int }}"></div>
             </div>
             {% if todays_notes.get(habit["id"]) %}
             <span class="todays-note">{{ todays_notes[habit["id"]] }}</span>
@@ -64,18 +64,11 @@
         </div>
 
         <div class="habit-right">
-            {% if habit["id"] in logged_today %}
-            <button class="check-btn check-done" disabled>
-                <i data-lucide="check"></i>
+            <button class="check-btn {% if habit['id'] in logged_today %}check-done{% endif %}"
+                    data-habit-id="{{ habit['id'] }}"
+                    {% if habit['id'] in logged_today %}disabled{% endif %}>
+                <i data-lucide="{{ 'check' if habit['id'] in logged_today else 'circle' }}"></i>
             </button>
-            {% else %}
-            <form method="POST" action="/log/{{ habit['id'] }}" class="log-form">
-                <input type="hidden" name="notes" value="">
-                <button type="submit" class="check-btn">
-                    <i data-lucide="circle"></i>
-                </button>
-            </form>
-            {% endif %}
             <div class="overflow-wrap">
                 <button class="overflow-btn">
                     <i data-lucide="more-vertical"></i>
@@ -502,6 +495,66 @@ var pendingReminders = JSON.parse(document.getElementById('reminder-data').textC
         }
     });
 })();
+
+// Fetch log handler
+document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var self = this;
+        var habitId = this.dataset.habitId;
+        self.disabled = true;
+        fetch('/log/' + habitId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'notes='
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.done) { self.disabled = false; return; }
+
+            // Button → done state
+            self.classList.add('check-done');
+            self.innerHTML = '<i data-lucide="check"></i>';
+            lucide.createIcons({ nodes: [self] });
+
+            // Card fade
+            var card = self.closest('.habit-card');
+            if (card) card.classList.add('done');
+
+            // Hero progress bar
+            var progressEl = document.querySelector('.home-progress');
+            var total = progressEl ? parseInt(progressEl.dataset.total) : 0;
+            var pct = total > 0 ? Math.round(data.logged_count / total * 100) : 0;
+            var progressText = document.getElementById('progress-text');
+            var progressPct = document.getElementById('progress-pct');
+            var progressFill = document.querySelector('.home-progress-fill');
+            if (progressText) progressText.textContent = data.logged_count + ' of ' + total + ' done today';
+            if (progressPct) progressPct.textContent = pct + '%';
+            if (progressFill) progressFill.style.width = pct + '%';
+
+            // Weekly bar for this habit
+            var bar = document.getElementById('bar-' + habitId);
+            if (bar) {
+                var newCount = parseInt(bar.dataset.count || '0') + 1;
+                bar.dataset.count = newCount;
+                bar.style.width = Math.min(100, Math.round(newCount / 7 * 100)) + '%';
+            }
+
+            // XP bar
+            if (data.player) {
+                var p = data.player;
+                var xpFill = document.getElementById('xp-bar-fill');
+                var xpCount = document.querySelector('.xp-count');
+                var xpBadge = document.querySelector('.xp-level-badge');
+                var xpRank = document.querySelector('.xp-rank-name');
+                if (xpFill) xpFill.style.width = p.pct + '%';
+                if (xpCount) xpCount.textContent = p.xp + '/' + p.xp_needed + ' XP';
+                if (xpBadge) xpBadge.textContent = 'Lv ' + p.level;
+                if (xpRank) xpRank.textContent = p.rank;
+            }
+        })
+        .catch(function() { self.disabled = false; });
+    });
+});
 
 // Auto-open add sheet when navigated from another tab via FAB (?add=1)
 // Deferred with setTimeout so base.html's openSheet/closeSheet are defined first,
