@@ -2205,6 +2205,7 @@ html.no-scroll {
         column-gap: 32px;
         row-gap: 8px;
         align-items: start;
+        align-content: start;
     }
 
     .top-bar {
