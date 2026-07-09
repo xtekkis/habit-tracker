@@ -2281,4 +2281,21 @@ html.no-scroll {
         gap: 12px;
         align-content: start;
     }
+
+    .cal-month-nav {
+        max-width: 440px;
+        margin: 0 auto 20px;
+    }
+
+    .cal-grid {
+        max-width: 440px;
+        margin: 0 auto 24px;
+    }
+
+    .cal-stats,
+    .cal-notes {
+        max-width: 440px;
+        margin-left: auto;
+        margin-right: auto;
+    }
 }
