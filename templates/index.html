@@ -425,12 +425,17 @@ document.querySelectorAll('.overflow-btn').forEach(function(btn) {
         document.querySelectorAll('.overflow-menu').forEach(function(m) {
             m.classList.remove('open', 'flip-up');
         });
+        document.querySelectorAll('.habit-card.menu-open').forEach(function(c) {
+            c.classList.remove('menu-open');
+        });
         if (!isOpen) {
             var btnRect = this.getBoundingClientRect();
             if (window.innerHeight - btnRect.bottom < 140) {
                 menu.classList.add('flip-up');
             }
             menu.classList.add('open');
+            var card = this.closest('.habit-card');
+            if (card) card.classList.add('menu-open');
         }
     });
 });
@@ -438,6 +443,9 @@ document.querySelectorAll('.overflow-btn').forEach(function(btn) {
 document.addEventListener('click', function() {
     document.querySelectorAll('.overflow-menu').forEach(function(m) {
         m.classList.remove('open', 'flip-up');
+    });
+    document.querySelectorAll('.habit-card.menu-open').forEach(function(c) {
+        c.classList.remove('menu-open');
     });
 });
 

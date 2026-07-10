@@ -552,6 +552,8 @@ button:active {
 }
 
 .habit-card {
+    position: relative;
+    z-index: 1;
     background: var(--surface);
     border: none;
     border-radius: 20px;
@@ -562,6 +564,10 @@ button:active {
     box-shadow: var(--shadow-md);
     transition: box-shadow 0.2s, transform 0.2s;
     animation: slideUp 0.3s ease both;
+}
+
+.habit-card.menu-open {
+    z-index: 50;
 }
 
 .habit-card:hover {
@@ -813,7 +819,7 @@ button:active {
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
     min-width: 130px;
-    z-index: 20;
+    z-index: 1000;
     overflow: hidden;
 }
 
