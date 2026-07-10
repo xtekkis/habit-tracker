@@ -3,6 +3,8 @@ from database import init_db, get_connection, get_streak, get_monthly_summary, g
 
 app = Flask(__name__)
 
+PALETTE = ['#D96A34', '#8E9B4B', '#E8A93C', '#DD8FBE', '#C56B4A', '#7C9082', '#B58463', '#5A3A2A']
+
 @app.context_processor
 def inject_player():
     return {"player": get_player_state()}
@@ -85,9 +87,11 @@ def add_habit():
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
     reminder_time = request.form.get("reminder_time") or None
     icon = request.form.get("icon") or "check"
-    color = request.form.get("color") or "#D96A34"
+    conn = get_connection()
+    existing_count = conn.execute("SELECT COUNT(*) FROM habits").fetchone()[0]
+    default_color = PALETTE[existing_count % len(PALETTE)]
+    color = request.form.get("color") or default_color
     if name:
-        conn = get_connection()
         try:
             conn.execute(
                 "INSERT INTO habits (name, category_id, repeat_days, reminder_time, icon, color) VALUES (?, ?, ?, ?, ?, ?)",
@@ -96,7 +100,7 @@ def add_habit():
             conn.commit()
         except Exception:
             pass
-        conn.close()
+    conn.close()
     return redirect(url_for("index"))
 
 @app.route("/delete/<int:habit_id>")
