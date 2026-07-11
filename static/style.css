@@ -566,10 +566,6 @@ button:active {
     animation: slideUp 0.3s ease both;
 }
 
-.habit-card.menu-open {
-    z-index: 50;
-}
-
 .habit-card:hover {
     box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
@@ -811,15 +807,13 @@ button:active {
 
 .overflow-menu {
     display: none;
-    position: absolute;
-    top: calc(100% + 4px);
-    right: 0;
+    position: fixed;
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
     min-width: 130px;
-    z-index: 1000;
+    z-index: 9999;
     overflow: hidden;
 }
 

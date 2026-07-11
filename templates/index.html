@@ -416,38 +416,42 @@ document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
 });
 
-// Overflow menu
+// Overflow menu — moved onto <body> while open so position:fixed resolves against
+// the viewport (a transformed ancestor like .habit-card would otherwise capture it).
+function closeAllMenus() {
+    document.querySelectorAll('.overflow-menu.open').forEach(function(m) {
+        m.classList.remove('open');
+        m.style.top = '';
+        m.style.bottom = '';
+        m.style.right = '';
+        if (m._wrap) m._wrap.appendChild(m);
+    });
+}
+
 document.querySelectorAll('.overflow-btn').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
         e.stopPropagation();
         var menu = this.nextElementSibling;
         var isOpen = menu.classList.contains('open');
-        document.querySelectorAll('.overflow-menu').forEach(function(m) {
-            m.classList.remove('open', 'flip-up');
-        });
-        document.querySelectorAll('.habit-card.menu-open').forEach(function(c) {
-            c.classList.remove('menu-open');
-        });
+        closeAllMenus();
         if (!isOpen) {
             var btnRect = this.getBoundingClientRect();
+            menu._wrap = menu.parentNode;
+            document.body.appendChild(menu);
+            menu.style.right = (window.innerWidth - btnRect.right) + 'px';
             if (window.innerHeight - btnRect.bottom < 140) {
-                menu.classList.add('flip-up');
+                menu.style.top = 'auto';
+                menu.style.bottom = (window.innerHeight - btnRect.top + 4) + 'px';
+            } else {
+                menu.style.top = (btnRect.bottom + 4) + 'px';
+                menu.style.bottom = 'auto';
             }
             menu.classList.add('open');
-            var card = this.closest('.habit-card');
-            if (card) card.classList.add('menu-open');
         }
     });
 });
 
-document.addEventListener('click', function() {
-    document.querySelectorAll('.overflow-menu').forEach(function(m) {
-        m.classList.remove('open', 'flip-up');
-    });
-    document.querySelectorAll('.habit-card.menu-open').forEach(function(c) {
-        c.classList.remove('menu-open');
-    });
-});
+document.addEventListener('click', closeAllMenus);
 
 // Empty state add button
 var emptyAddBtn = document.getElementById('emptyAddBtn');
