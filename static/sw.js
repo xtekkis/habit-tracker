@@ -1,4 +1,4 @@
-const CACHE_NAME = 'habit-tracker-v1';
+const CACHE_NAME = 'habit-tracker-v2';
 const STATIC_ASSETS = [
     '/static/style.css',
     '/static/icons/icon-192.png',
@@ -25,12 +25,18 @@ self.addEventListener('fetch', (e) => {
     const url = new URL(e.request.url);
 
     if (url.pathname.startsWith('/static/')) {
+        // Stale-while-revalidate: serve cache immediately, refresh it from the
+        // network in the background so updated assets appear on the next load.
         e.respondWith(
-            caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-                const clone = res.clone();
-                caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
-                return res;
-            }))
+            caches.open(CACHE_NAME).then(cache =>
+                cache.match(e.request).then(cached => {
+                    const network = fetch(e.request).then(res => {
+                        cache.put(e.request, res.clone());
+                        return res;
+                    }).catch(() => cached);
+                    return cached || network;
+                })
+            )
         );
         return;
     }
