@@ -170,7 +170,7 @@
                     <div class="reminder-icon"><i data-lucide="bell"></i></div>
                     <span class="reminder-label">Reminder</span>
                 </div>
-                <span class="settings-toggle" id="addReminderToggle" role="button"></span>
+                <span class="settings-toggle" id="addReminderToggle" role="button" tabindex="0" aria-label="Toggle reminder"></span>
             </div>
             <div class="reminder-time-wrap" id="addReminderTimeWrap">
                 <span class="reminder-time-label">Remind me at</span>
@@ -237,7 +237,7 @@
                     <div class="reminder-icon"><i data-lucide="bell"></i></div>
                     <span class="reminder-label">Reminder</span>
                 </div>
-                <span class="settings-toggle" id="editReminderToggle" role="button"></span>
+                <span class="settings-toggle" id="editReminderToggle" role="button" tabindex="0" aria-label="Toggle reminder"></span>
             </div>
             <div class="reminder-time-wrap" id="editReminderTimeWrap">
                 <span class="reminder-time-label">Remind me at</span>
@@ -484,6 +484,12 @@ function setupReminderToggle(toggleId, timeWrapId, timeInputId) {
         timeInput.disabled = !turningOn;
         if (turningOn && 'Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
+        }
+    });
+    toggle.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggle.click();
         }
     });
 }
