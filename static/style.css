@@ -2210,6 +2210,18 @@ html.no-scroll {
 /* Desktop two-column layout (≥1024px) */
 
 @media (min-width: 1024px) {
+    :root {
+        --fs-3xs:  11px;
+        --fs-2xs:  12px;
+        --fs-xs:   13px;
+        --fs-sm:   14px;
+        --fs-base: 15px;
+        --fs-md:   16px;
+        --fs-lg:   18px;
+        --fs-xl:   20px;
+        --fs-2xl:  22px;
+    }
+
     .app-shell {
         max-width: 1080px;
         display: grid;
@@ -2248,7 +2260,7 @@ html.no-scroll {
     .xp-bar-wrap {
         flex-basis: auto;
         order: -2;
-        padding: 10px 14px 8px;
+        padding: 12px 16px 10px;
         border-bottom: 1px solid var(--border);
         margin: -4px -4px 4px;
     }
@@ -2258,7 +2270,7 @@ html.no-scroll {
         justify-content: flex-start;
         gap: 12px;
         padding: 12px 14px;
-        font-size: 14px;
+        font-size: var(--fs-md);
         font-weight: 600;
         border-radius: var(--radius-md);
     }
@@ -2278,7 +2290,7 @@ html.no-scroll {
 
     .tab-fab::after {
         content: 'New habit';
-        font-size: 14px;
+        font-size: var(--fs-md);
         font-weight: 700;
     }
 
@@ -2310,5 +2322,30 @@ html.no-scroll {
         max-width: 440px;
         margin-left: auto;
         margin-right: auto;
+    }
+
+    .habit-tile {
+        width: 52px;
+        height: 52px;
+    }
+
+    .habit-tile svg {
+        width: 26px;
+        height: 26px;
+    }
+
+    .check-btn {
+        width: 46px;
+        height: 46px;
+    }
+
+    .check-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .week-day-number {
+        width: 36px;
+        height: 36px;
     }
 }
