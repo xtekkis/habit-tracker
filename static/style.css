@@ -548,11 +548,15 @@ button:active {
     font-size: 16px;
     line-height: 1;
     padding: 5px 10px 5px 4px;
-    transition: color 0.15s;
+    transition: color 0.15s, transform 0.1s;
 }
 
 .cat-delete-btn:hover {
     color: var(--danger);
+}
+
+.cat-delete-btn:active {
+    transform: scale(0.9);
 }
 
 /* Habit cards */
@@ -755,7 +759,7 @@ button:active {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, color 0.2s;
+    transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.1s;
     padding: 0;
 }
 
@@ -771,12 +775,16 @@ button:active {
     color: var(--primary);
 }
 
+.check-btn:active:not(.check-done) {
+    transform: scale(0.88);
+}
+
 .check-btn.check-done {
     background: var(--primary);
     border-color: var(--primary);
     color: #fff;
     cursor: default;
-    animation: fadeIn 0.3s ease;
+    animation: checkPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .check-btn.check-done:hover {
@@ -846,7 +854,7 @@ button:active {
     font-weight: 500;
     color: var(--text);
     text-decoration: none;
-    transition: background 0.12s;
+    transition: background 0.15s;
 }
 
 .overflow-item:hover {
@@ -1001,7 +1009,7 @@ tbody td {
     font-weight: 600;
     padding: 8px;
     cursor: pointer;
-    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
 .period-btn:hover {
@@ -1526,12 +1534,16 @@ html.no-scroll {
     color: var(--text-muted);
     text-decoration: none;
     flex-shrink: 0;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
 }
 
 .back-btn:hover {
     background: var(--border);
     color: var(--text);
+}
+
+.back-btn:active {
+    transform: scale(0.93);
 }
 
 .back-btn svg {
@@ -1582,12 +1594,16 @@ html.no-scroll {
     border-radius: 50%;
     color: var(--text-muted);
     text-decoration: none;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
 }
 
 .cal-nav-arrow:hover {
     background: var(--surface-2);
     color: var(--text);
+}
+
+.cal-nav-arrow:active {
+    transform: scale(0.93);
 }
 
 .cal-nav-arrow svg {
@@ -1940,12 +1956,16 @@ html.no-scroll {
     border-radius: var(--radius-sm);
     color: var(--text-faint);
     text-decoration: none;
-    transition: color 0.15s, background 0.15s;
+    transition: color 0.15s, background 0.15s, transform 0.1s;
 }
 
 .cat-mgmt-delete:hover {
     color: var(--danger);
     background: rgba(239, 68, 68, 0.08);
+}
+
+.cat-mgmt-delete:active {
+    transform: scale(0.93);
 }
 
 .cat-mgmt-delete svg {
@@ -2087,6 +2107,12 @@ html.no-scroll {
     to   { opacity: 1; }
 }
 
+@keyframes checkPop {
+    0%   { transform: scale(0.6); opacity: 0; }
+    60%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
 /* Habit tile icon */
 
 .habit-tile svg { width: 22px; height: 22px; color: #fff; stroke-width: 2; }
@@ -2117,8 +2143,18 @@ html.no-scroll {
 
 .icon-opt svg { width: 20px; height: 20px; stroke-width: 1.8; }
 
+.icon-opt:hover {
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+
 .icon-opt.selected {
     background: var(--primary-soft);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.icon-opt.selected:hover {
     border-color: var(--primary);
     color: var(--primary);
 }
@@ -2143,7 +2179,15 @@ html.no-scroll {
     flex-shrink: 0;
 }
 
+.color-opt:hover {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--border-strong);
+}
+
 .color-opt.selected {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--text);
+}
+
+.color-opt.selected:hover {
     box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--text);
 }
 
