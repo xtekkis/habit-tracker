@@ -44,7 +44,7 @@
     <div class="habit-card {% if habit['id'] in logged_today %}done{% endif %}" data-category="{{ habit['category_id'] or '' }}">
 
         <div class="habit-tile" style="background: {{ habit['color'] or '#D96A34' }}">
-            <i data-lucide="{{ habit['icon'] or 'check' }}"></i>
+            <i data-lucide="{{ habit['icon'] or 'check' }}" aria-hidden="true"></i>
         </div>
 
         <div class="habit-body">
@@ -66,12 +66,13 @@
         <div class="habit-right">
             <button class="check-btn {% if habit['id'] in logged_today %}check-done{% endif %}"
                     data-habit-id="{{ habit['id'] }}"
+                    aria-label="{{ 'Completed' if habit['id'] in logged_today else 'Mark ' + habit['name'] + ' complete' }}"
                     {% if habit['id'] in logged_today %}disabled{% endif %}>
-                <i data-lucide="{{ 'check' if habit['id'] in logged_today else 'circle' }}"></i>
+                <i data-lucide="{{ 'check' if habit['id'] in logged_today else 'circle' }}" aria-hidden="true"></i>
             </button>
             <div class="overflow-wrap">
-                <button class="overflow-btn">
-                    <i data-lucide="more-vertical"></i>
+                <button class="overflow-btn" aria-label="More options">
+                    <i data-lucide="more-vertical" aria-hidden="true"></i>
                 </button>
                 <div class="overflow-menu" id="overflow-{{ habit['id'] }}">
                     <a class="overflow-item edit-link" href="#"
@@ -93,11 +94,11 @@
     </div>
     {% else %}
     <div class="empty-state">
-        <div class="empty-state-icon"><i data-lucide="sprout"></i></div>
+        <div class="empty-state-icon"><i data-lucide="sprout" aria-hidden="true"></i></div>
         <p class="empty-state-title">Start your first habit</p>
         <p class="empty-state-sub">Small steps, every day. Add a habit and check it off to build your streak.</p>
         <button class="btn-empty-add" id="emptyAddBtn">
-            <i data-lucide="plus"></i> Add your first habit
+            <i data-lucide="plus" aria-hidden="true"></i> Add your first habit
         </button>
     </div>
     {% endfor %}
@@ -121,8 +122,8 @@
         <div class="sheet-handle"></div>
         <div class="sheet-header">
             <h2 class="sheet-title">New habit</h2>
-            <button class="sheet-close-btn sheet-close" data-sheet="addSheet">
-                <i data-lucide="x"></i>
+            <button class="sheet-close-btn sheet-close" data-sheet="addSheet" aria-label="Close">
+                <i data-lucide="x" aria-hidden="true"></i>
             </button>
         </div>
         <form action="/add" method="POST">
@@ -133,15 +134,15 @@
             <input type="hidden" name="icon" id="addIconInput" value="check">
             <div class="icon-picker" id="addIconPicker">
                 {% for ic in ['check','droplet','dumbbell','book-open','leaf','moon','heart','coffee','footprints','brain','music','pencil'] %}
-                <button type="button" class="icon-opt {% if loop.first %}selected{% endif %}" data-icon="{{ ic }}"><i data-lucide="{{ ic }}"></i></button>
+                <button type="button" class="icon-opt {% if loop.first %}selected{% endif %}" data-icon="{{ ic }}" aria-label="{{ ic }} icon"><i data-lucide="{{ ic }}" aria-hidden="true"></i></button>
                 {% endfor %}
             </div>
 
             <label class="field-label">Color</label>
             <input type="hidden" name="color" id="addColorInput" value="#D96A34">
             <div class="color-picker" id="addColorPicker">
-                {% for c in ['#D96A34','#8E9B4B','#E8A93C','#DD8FBE','#C56B4A','#7C9082','#B58463','#5A3A2A'] %}
-                <button type="button" class="color-opt {% if loop.first %}selected{% endif %}" data-color="{{ c }}" style="background: {{ c }}"></button>
+                {% for c, cname in [('#D96A34','Clay'),('#8E9B4B','Olive'),('#E8A93C','Amber'),('#DD8FBE','Blush'),('#C56B4A','Terracotta'),('#7C9082','Sage'),('#B58463','Mocha'),('#5A3A2A','Espresso')] %}
+                <button type="button" class="color-opt {% if loop.first %}selected{% endif %}" data-color="{{ c }}" style="background: {{ c }}" aria-label="{{ cname }} color"></button>
                 {% endfor %}
             </div>
 
@@ -188,8 +189,8 @@
         <div class="sheet-handle"></div>
         <div class="sheet-header">
             <h2 class="sheet-title">Edit habit</h2>
-            <button class="sheet-close-btn sheet-close" data-sheet="editSheet">
-                <i data-lucide="x"></i>
+            <button class="sheet-close-btn sheet-close" data-sheet="editSheet" aria-label="Close">
+                <i data-lucide="x" aria-hidden="true"></i>
             </button>
         </div>
         <form id="editSheetForm" method="POST">
@@ -200,15 +201,15 @@
             <input type="hidden" name="icon" id="editIconInput" value="check">
             <div class="icon-picker" id="editIconPicker">
                 {% for ic in ['check','droplet','dumbbell','book-open','leaf','moon','heart','coffee','footprints','brain','music','pencil'] %}
-                <button type="button" class="icon-opt" data-icon="{{ ic }}"><i data-lucide="{{ ic }}"></i></button>
+                <button type="button" class="icon-opt" data-icon="{{ ic }}" aria-label="{{ ic }} icon"><i data-lucide="{{ ic }}" aria-hidden="true"></i></button>
                 {% endfor %}
             </div>
 
             <label class="field-label">Color</label>
             <input type="hidden" name="color" id="editColorInput" value="#D96A34">
             <div class="color-picker" id="editColorPicker">
-                {% for c in ['#D96A34','#8E9B4B','#E8A93C','#DD8FBE','#C56B4A','#7C9082','#B58463','#5A3A2A'] %}
-                <button type="button" class="color-opt" data-color="{{ c }}" style="background: {{ c }}"></button>
+                {% for c, cname in [('#D96A34','Clay'),('#8E9B4B','Olive'),('#E8A93C','Amber'),('#DD8FBE','Blush'),('#C56B4A','Terracotta'),('#7C9082','Sage'),('#B58463','Mocha'),('#5A3A2A','Espresso')] %}
+                <button type="button" class="color-opt" data-color="{{ c }}" style="background: {{ c }}" aria-label="{{ cname }} color"></button>
                 {% endfor %}
             </div>
 
@@ -255,8 +256,8 @@
         <div class="sheet-handle"></div>
         <div class="sheet-header">
             <h2 class="sheet-title">New category</h2>
-            <button class="sheet-close-btn sheet-close" data-sheet="categorySheet">
-                <i data-lucide="x"></i>
+            <button class="sheet-close-btn sheet-close" data-sheet="categorySheet" aria-label="Close">
+                <i data-lucide="x" aria-hidden="true"></i>
             </button>
         </div>
         <form action="/category/add" method="POST">
@@ -531,7 +532,8 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
 
             // Button → done state
             self.classList.add('check-done');
-            self.innerHTML = '<i data-lucide="check"></i>';
+            self.setAttribute('aria-label', 'Completed');
+            self.innerHTML = '<i data-lucide="check" aria-hidden="true"></i>';
             lucide.createIcons({ nodes: [self] });
 
             // Card fade

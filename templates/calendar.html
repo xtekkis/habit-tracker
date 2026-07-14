@@ -2,7 +2,7 @@
 {% block title %}{{ habit["name"] }} - Calendar{% endblock %}
 
 {% block top_bar_content %}
-<a href="/calendar" class="back-btn"><i data-lucide="chevron-left"></i></a>
+<a href="/calendar" class="back-btn" aria-label="Back to habit list"><i data-lucide="chevron-left" aria-hidden="true"></i></a>
 <div class="habit-cal-header">
     <span class="habit-cal-label">Habit</span>
     <h1 class="habit-cal-name">{{ habit["name"] }}</h1>
@@ -12,12 +12,12 @@
 {% block content %}
 
 <div class="cal-month-nav">
-    <a href="/habit/{{ habit['id'] }}/calendar?month={{ prev_month }}" class="cal-nav-arrow">
-        <i data-lucide="chevron-left"></i>
+    <a href="/habit/{{ habit['id'] }}/calendar?month={{ prev_month }}" class="cal-nav-arrow" aria-label="Previous month">
+        <i data-lucide="chevron-left" aria-hidden="true"></i>
     </a>
     <span class="cal-month-name">{{ month_name }}</span>
-    <a href="/habit/{{ habit['id'] }}/calendar?month={{ next_month }}" class="cal-nav-arrow">
-        <i data-lucide="chevron-right"></i>
+    <a href="/habit/{{ habit['id'] }}/calendar?month={{ next_month }}" class="cal-nav-arrow" aria-label="Next month">
+        <i data-lucide="chevron-right" aria-hidden="true"></i>
     </a>
 </div>
 

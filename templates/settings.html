@@ -7,27 +7,27 @@
 <p class="section-label">Data</p>
 <div class="settings-list">
     <a href="/export/csv" class="settings-item">
-        <div class="settings-item-icon"><i data-lucide="download"></i></div>
+        <div class="settings-item-icon"><i data-lucide="download" aria-hidden="true"></i></div>
         <div class="settings-item-body">
             <span class="settings-item-label">Export data</span>
             <span class="settings-item-sub">Download a CSV of all check-ins</span>
         </div>
-        <i data-lucide="chevron-right" class="settings-item-arrow"></i>
+        <i data-lucide="chevron-right" class="settings-item-arrow" aria-hidden="true"></i>
     </a>
     <button class="settings-item" id="manageCategoriesBtn">
-        <div class="settings-item-icon icon-green"><i data-lucide="tag"></i></div>
+        <div class="settings-item-icon icon-green"><i data-lucide="tag" aria-hidden="true"></i></div>
         <div class="settings-item-body">
             <span class="settings-item-label">Manage categories</span>
             <span class="settings-item-sub">{{ categories|length }} categor{{ 'y' if categories|length == 1 else 'ies' }}</span>
         </div>
-        <i data-lucide="chevron-right" class="settings-item-arrow"></i>
+        <i data-lucide="chevron-right" class="settings-item-arrow" aria-hidden="true"></i>
     </button>
 </div>
 
 <p class="section-label">Preferences</p>
 <div class="settings-list">
     <form action="/preferences/start-week" method="POST" class="settings-item settings-item-static">
-        <div class="settings-item-icon icon-muted"><i data-lucide="calendar-days"></i></div>
+        <div class="settings-item-icon icon-muted"><i data-lucide="calendar-days" aria-hidden="true"></i></div>
         <div class="settings-item-body">
             <span class="settings-item-label">Start week on</span>
         </div>
@@ -35,34 +35,34 @@
         <button type="submit" class="settings-item-value settings-item-value-btn">{{ prefs['start_week']|capitalize }}</button>
     </form>
     <form action="/preferences/toggle-streaks" method="POST" class="settings-item settings-item-static">
-        <div class="settings-item-icon icon-flame"><i data-lucide="flame"></i></div>
+        <div class="settings-item-icon icon-flame"><i data-lucide="flame" aria-hidden="true"></i></div>
         <div class="settings-item-body">
             <span class="settings-item-label">Show streaks</span>
         </div>
-        <button type="submit" class="settings-toggle {{ 'settings-toggle-on' if prefs['show_streaks'] == '1' else '' }}"></button>
+        <button type="submit" class="settings-toggle {{ 'settings-toggle-on' if prefs['show_streaks'] == '1' else '' }}" aria-label="Toggle show streaks"></button>
     </form>
 </div>
 
 <p class="section-label">About</p>
 <div class="settings-list">
     <div class="settings-item settings-item-static">
-        <div class="settings-item-icon icon-muted"><i data-lucide="info"></i></div>
+        <div class="settings-item-icon icon-muted"><i data-lucide="info" aria-hidden="true"></i></div>
         <div class="settings-item-body">
             <span class="settings-item-label">About</span>
         </div>
         <span class="settings-item-value">v1.0</span>
     </div>
     <a href="https://github.com/xtekkis/habit-tracker" class="settings-item" target="_blank" rel="noopener">
-        <div class="settings-item-icon icon-muted"><i data-lucide="code-2"></i></div>
+        <div class="settings-item-icon icon-muted"><i data-lucide="code-2" aria-hidden="true"></i></div>
         <div class="settings-item-body">
             <span class="settings-item-label">Source code</span>
         </div>
-        <i data-lucide="external-link" class="settings-item-arrow"></i>
+        <i data-lucide="external-link" class="settings-item-arrow" aria-hidden="true"></i>
     </a>
 </div>
 
 <button class="btn-reset" id="resetBtn">
-    <i data-lucide="trash-2"></i> Reset all data
+    <i data-lucide="trash-2" aria-hidden="true"></i> Reset all data
 </button>
 
 <!-- Manage categories sheet -->
@@ -71,8 +71,8 @@
         <div class="sheet-handle"></div>
         <div class="sheet-header">
             <h2 class="sheet-title">Categories</h2>
-            <button class="sheet-close-btn sheet-close" data-sheet="categoryMgmtSheet">
-                <i data-lucide="x"></i>
+            <button class="sheet-close-btn sheet-close" data-sheet="categoryMgmtSheet" aria-label="Close">
+                <i data-lucide="x" aria-hidden="true"></i>
             </button>
         </div>
         {% if categories %}
@@ -80,8 +80,8 @@
             {% for cat in categories %}
             <div class="cat-mgmt-item">
                 <span class="cat-mgmt-name">{{ cat['name'] }}</span>
-                <a href="/category/delete/{{ cat['id'] }}?next=/settings" class="cat-mgmt-delete" title="Delete">
-                    <i data-lucide="trash-2"></i>
+                <a href="/category/delete/{{ cat['id'] }}?next=/settings" class="cat-mgmt-delete" title="Delete" aria-label="Delete {{ cat['name'] }}">
+                    <i data-lucide="trash-2" aria-hidden="true"></i>
                 </a>
             </div>
             {% endfor %}

@@ -10,7 +10,7 @@
     {% for habit in habits %}
     <a href="/habit/{{ habit['id'] }}/calendar" class="habit-card habit-card-link">
         <div class="habit-tile" style="background: {{ habit['color'] or '#D96A34' }}">
-            <i data-lucide="{{ habit['icon'] or 'check' }}"></i>
+            <i data-lucide="{{ habit['icon'] or 'check' }}" aria-hidden="true"></i>
         </div>
         <div class="habit-body">
             <div class="habit-name-row">
@@ -20,13 +20,13 @@
                 {% endif %}
             </div>
         </div>
-        <i data-lucide="chevron-right" class="habit-card-arrow"></i>
+        <i data-lucide="chevron-right" class="habit-card-arrow" aria-hidden="true"></i>
     </a>
     {% endfor %}
 </div>
 {% else %}
 <div class="empty-state">
-    <div class="empty-state-icon"><i data-lucide="calendar"></i></div>
+    <div class="empty-state-icon"><i data-lucide="calendar" aria-hidden="true"></i></div>
     <p class="empty-state-title">No habits yet</p>
     <p class="empty-state-sub">Add one from the Today tab first.</p>
 </div>
