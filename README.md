@@ -1,21 +1,8 @@
 # Habit Tracker
 
-A mobile-first habit tracking web app built with Flask and SQLite. Track your daily habits, earn XP, and build streaks — all running locally in your browser with no account or API keys required.
+A habit tracker I built with Flask and SQLite. You add the habits you want to keep up with, check them off each day, and watch your streaks and XP grow over time.
 
-## Features
-
-- **Daily habit tracking** — check off habits scheduled for today; repeat days are configurable per habit
-- **XP & Levels** — earn XP for every logged habit (+10) and a perfect-day bonus (+25); level up through 11 ranks from Seed to Evergreen
-- **Streaks** — current and best streaks tracked per habit
-- **Insights** — weekly/monthly bar chart, completion stats, and perfect-days highlight
-- **Per-habit calendar** — month grid view, streak cards, and notes timeline
-- **Icon & color picker** — 12 Lucide icons and 8 earthy color swatches per habit
-- **Category filters** — group habits and filter the Today view
-- **Reminders** — per-habit notification scheduling via the Web Notifications API
-- **Settings** — start-week preference, streak display toggle, CSV export, and data reset
-- **PWA** — installable on mobile and desktop via browser (manifest + service worker)
-- **Responsive** — mobile-first 440px layout; ≥1024px switches to a two-column sidebar layout
-- **Accessible** — keyboard focus states, reduced-motion support, and ARIA labels throughout
+**Live app:** https://xtekkis.pythonanywhere.com/
 
 ## Screenshots
 
@@ -27,50 +14,41 @@ A mobile-first habit tracking web app built with Flask and SQLite. Track your da
 |----------|----------|---------|
 | ![Calendar](screenshots/calendar.png) | ![Settings](screenshots/settings.png) | ![Desktop layout](screenshots/desktop.png) |
 
-## Tech Stack
+## What it does
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Python + Flask |
-| Database | SQLite (`habits.db`) |
-| Templates | Jinja2 |
-| Icons | Lucide (CDN) |
-| Font | Hanken Grotesk (Google Fonts) |
-| Styling | Vanilla CSS with custom properties |
-| JS | Vanilla JS — no framework |
-| PWA icons | Pillow (one-time generation script) |
+- Check off your habits for the day and keep a running streak going for each one
+- Earn XP every time you log a habit, with a bonus for finishing everything scheduled that day, and level up through ranks from Seed to Evergreen
+- See how you're doing on the Insights page, with a weekly and monthly breakdown
+- Browse any habit's full history on its own calendar, including current and best streaks
+- Pick an icon and colour for each habit so they're easy to tell apart at a glance
+- Group habits into categories and filter the day's list by them
+- Set a daily reminder time per habit (uses browser notifications)
+- Export all your check-ins to CSV whenever you want
+- Install it as an app on your phone or desktop, since it's a PWA
+- Works nicely on mobile and switches to a two-column layout on wider screens
 
-## Setup
+## Running it locally
 
-**Requirements:** Python 3.9+
+You'll need Python 3.9 or newer.
 
 ```bash
-# Clone the repo
 git clone https://github.com/xtekkis/habit-tracker.git
 cd habit-tracker
 
-# Create and activate a virtual environment
 python -m venv venv
 venv\Scripts\activate       # Windows
 # source venv/bin/activate  # macOS / Linux
 
-# Install dependencies
 pip install -r requirements.txt
-
-# Run the app
 python app.py
 ```
 
-Open [http://localhost:5000](http://localhost:5000) in your browser.
+Then open http://localhost:5000 in your browser. The database file (`habits.db`) is created for you on the first run, so there's nothing else to set up.
 
-The database (`habits.db`) is created automatically on first run and is excluded from git.
+## Built with
 
-## PWA Installation
-
-With the app running, open it in Chrome or Edge and click **Install** in the address bar (or use the browser menu → "Install Habit Tracker"). The app will open in its own window without browser chrome.
-
-Safari on iOS: tap the Share button → **Add to Home Screen**.
-
-## Hosting
-
-[PythonAnywhere](https://www.pythonanywhere.com) is recommended for self-hosting — it supports persistent SQLite on the free tier and provides HTTPS (required for PWA installation and notifications).
+- Python and Flask
+- SQLite for storage
+- Jinja2 for templates
+- Plain CSS and vanilla JavaScript, no frameworks and no build step
+- Lucide for the icons and Hanken Grotesk for the font
