@@ -2,8 +2,6 @@
 
 A habit tracker I built with Flask and SQLite. You add the habits you want to keep up with, check them off each day, and watch your streaks and XP grow over time.
 
-**Live app:** https://xtekkis.pythonanywhere.com/
-
 ## Screenshots
 
 | Today | Add habit | Insights |

@@ -68,6 +68,19 @@ def init_db():
     except Exception:
         pass
 
+    try:
+        cursor.execute("ALTER TABLE habits ADD COLUMN owner TEXT")
+    except Exception:
+        pass
+
+    try:
+        cursor.execute("ALTER TABLE categories ADD COLUMN owner TEXT")
+    except Exception:
+        pass
+
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_habits_owner ON habits(owner)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_categories_owner ON categories(owner)")
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS preferences (
             key TEXT PRIMARY KEY,
@@ -85,6 +98,13 @@ def init_db():
         )
     """)
     cursor.execute("INSERT OR IGNORE INTO player_state (id, xp, level) VALUES (1, 0, 1)")
+
+    # Starting fresh for multi-user: wipe pre-multi-user habits/categories/logs
+    # (rows with no owner). Safe to run on every startup: once real data has an
+    # owner, this is a no-op, since new rows will always have one set.
+    cursor.execute("DELETE FROM logs WHERE habit_id IN (SELECT id FROM habits WHERE owner IS NULL)")
+    cursor.execute("DELETE FROM habits WHERE owner IS NULL")
+    cursor.execute("DELETE FROM categories WHERE owner IS NULL")
 
     conn.commit()
     conn.close()
