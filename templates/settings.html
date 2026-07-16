@@ -80,9 +80,12 @@
             {% for cat in categories %}
             <div class="cat-mgmt-item">
                 <span class="cat-mgmt-name">{{ cat['name'] }}</span>
-                <a href="/category/delete/{{ cat['id'] }}?next=/settings" class="cat-mgmt-delete" title="Delete" aria-label="Delete {{ cat['name'] }}">
-                    <i data-lucide="trash-2" aria-hidden="true"></i>
-                </a>
+                <form action="/category/delete/{{ cat['id'] }}" method="POST" style="display:contents">
+                    <input type="hidden" name="next" value="/settings">
+                    <button type="submit" class="cat-mgmt-delete" title="Delete" aria-label="Delete {{ cat['name'] }}">
+                        <i data-lucide="trash-2" aria-hidden="true"></i>
+                    </button>
+                </form>
             </div>
             {% endfor %}
         </div>

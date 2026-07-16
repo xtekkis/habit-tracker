@@ -110,7 +110,9 @@
         <h3>Delete habit</h3>
         <p class="modal-body-text">Delete "<span id="deleteHabitName"></span>"? All logs will also be removed. This can't be undone.</p>
         <div class="modal-actions">
-            <a id="deleteConfirmLink" href="#" class="btn-danger">Delete</a>
+            <form id="deleteConfirmForm" method="POST" style="display:contents">
+                <button type="submit" class="btn-danger">Delete</button>
+            </form>
             <button type="button" class="btn-cancel" id="closeDeleteModal">Cancel</button>
         </div>
     </div>
@@ -404,7 +406,7 @@ document.querySelectorAll('.open-delete').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.preventDefault();
         document.getElementById('deleteHabitName').textContent = this.dataset.name;
-        document.getElementById('deleteConfirmLink').href = '/delete/' + this.dataset.id;
+        document.getElementById('deleteConfirmForm').action = '/delete/' + this.dataset.id;
         document.getElementById('deleteModal').classList.add('active');
     });
 });

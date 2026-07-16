@@ -131,7 +131,7 @@ def add_habit():
     conn.close()
     return redirect(url_for("index"))
 
-@app.route("/delete/<int:habit_id>")
+@app.route("/delete/<int:habit_id>", methods=["POST"])
 def delete_habit(habit_id):
     owner = session["uid"]
     conn = get_connection()
@@ -242,7 +242,7 @@ def add_category():
         conn.close()
     return redirect(url_for("index"))
 
-@app.route("/category/delete/<int:category_id>")
+@app.route("/category/delete/<int:category_id>", methods=["POST"])
 def delete_category(category_id):
     owner = session["uid"]
     conn = get_connection()
@@ -250,7 +250,7 @@ def delete_category(category_id):
     conn.execute("DELETE FROM categories WHERE id = ? AND owner = ?", (category_id, owner))
     conn.commit()
     conn.close()
-    next_url = request.args.get('next', url_for('index'))
+    next_url = request.form.get('next', url_for('index'))
     if not next_url.startswith('/'):
         next_url = url_for('index')
     return redirect(next_url)
