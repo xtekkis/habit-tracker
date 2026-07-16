@@ -30,7 +30,7 @@ PALETTE = ['#D96A34', '#8E9B4B', '#E8A93C', '#DD8FBE', '#C56B4A', '#7C9082', '#B
 
 @app.context_processor
 def inject_player():
-    return {"player": get_player_state()}
+    return {"player": get_player_state(session["uid"])}
 
 @app.route("/manifest.json")
 def pwa_manifest():
@@ -69,7 +69,7 @@ def index():
     today_weekday = today_date.weekday()  # Mon=0..Sun=6
     habits = [h for h in habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"]
 
-    prefs = get_preferences()
+    prefs = get_preferences(owner)
     week_start = get_week_start(today_date, prefs["start_week"])
     letters = ['M','T','W','T','F','S','S']  # indexed by Python weekday: Mon=0..Sun=6
     week_days = [
@@ -153,7 +153,7 @@ def weekly_summary():
     from datetime import date
     owner = session["uid"]
     today = date.today()
-    prefs = get_preferences()
+    prefs = get_preferences(owner)
     week_start = get_week_start(today, prefs["start_week"])
     month_start = today.replace(day=1)
     days_elapsed_this_week = (today - week_start).days + 1
@@ -271,22 +271,24 @@ def calendar_index():
 
 @app.route("/settings")
 def settings():
-    categories = get_categories(session["uid"])
-    prefs = get_preferences()
+    owner = session["uid"]
+    categories = get_categories(owner)
+    prefs = get_preferences(owner)
     return render_template("settings.html", categories=categories, prefs=prefs)
 
 @app.route("/preferences/toggle-streaks", methods=["POST"])
 def toggle_streaks():
-    prefs = get_preferences()
+    owner = session["uid"]
+    prefs = get_preferences(owner)
     new_value = "0" if prefs["show_streaks"] == "1" else "1"
-    set_preference("show_streaks", new_value)
+    set_preference(owner, "show_streaks", new_value)
     return redirect(url_for("settings"))
 
 @app.route("/preferences/start-week", methods=["POST"])
 def set_start_week():
     value = request.form.get("value")
     if value in ("monday", "sunday"):
-        set_preference("start_week", value)
+        set_preference(session["uid"], "start_week", value)
     return redirect(url_for("settings"))
 
 @app.route("/reset", methods=["POST"])
@@ -423,14 +425,14 @@ def log_habit(habit_id):
     conn.close()
 
     if new_log:
-        add_xp(10)
+        add_xp(owner, 10)
         if scheduled and logged_count >= len(scheduled):
-            add_xp(25)
+            add_xp(owner, 25)
 
     return jsonify({
         "done": new_log,
         "logged_count": logged_count,
-        "player": get_player_state()
+        "player": get_player_state(owner)
     })
 
 if __name__ == "__main__":

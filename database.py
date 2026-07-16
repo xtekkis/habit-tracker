@@ -129,23 +129,34 @@ def init_db():
         cursor.execute("CREATE UNIQUE INDEX idx_categories_owner_name ON categories(owner, name)")
         cursor.execute("CREATE INDEX idx_categories_owner ON categories(owner)")
 
+    # preferences/player_state predate multi-user and had a single global row
+    # each (key alone as PK; a hardcoded id=1). Neither shape can hold one row
+    # per browser, so - starting fresh, as already decided - they're rebuilt
+    # below rather than migrated. Guarded so this only runs once.
+    cursor.execute("PRAGMA table_info(preferences)")
+    if not any(row[1] == "owner" for row in cursor.fetchall()):
+        cursor.execute("DROP TABLE IF EXISTS preferences")
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS preferences (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL
+            owner TEXT NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            PRIMARY KEY (owner, key)
         )
     """)
-    cursor.execute("INSERT OR IGNORE INTO preferences (key, value) VALUES ('show_streaks', '1')")
-    cursor.execute("INSERT OR IGNORE INTO preferences (key, value) VALUES ('start_week', 'monday')")
+
+    cursor.execute("PRAGMA table_info(player_state)")
+    if not any(row[1] == "owner" for row in cursor.fetchall()):
+        cursor.execute("DROP TABLE IF EXISTS player_state")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS player_state (
-            id INTEGER PRIMARY KEY,
+            owner TEXT PRIMARY KEY,
             xp INTEGER NOT NULL DEFAULT 0,
             level INTEGER NOT NULL DEFAULT 1
         )
     """)
-    cursor.execute("INSERT OR IGNORE INTO player_state (id, xp, level) VALUES (1, 0, 1)")
 
     # Starting fresh for multi-user: wipe pre-multi-user habits/categories/logs
     # (rows with no owner). Safe to run on every startup: once real data has an
@@ -157,20 +168,20 @@ def init_db():
     conn.commit()
     conn.close()
 
-def get_preferences():
+def get_preferences(owner):
     conn = get_connection()
-    rows = conn.execute("SELECT key, value FROM preferences").fetchall()
+    rows = conn.execute("SELECT key, value FROM preferences WHERE owner = ?", (owner,)).fetchall()
     conn.close()
     prefs = {row["key"]: row["value"] for row in rows}
     prefs.setdefault("show_streaks", "1")
     prefs.setdefault("start_week", "monday")
     return prefs
 
-def set_preference(key, value):
+def set_preference(owner, key, value):
     conn = get_connection()
     conn.execute(
-        "INSERT INTO preferences (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-        (key, value)
+        "INSERT INTO preferences (owner, key, value) VALUES (?, ?, ?) ON CONFLICT(owner, key) DO UPDATE SET value = excluded.value",
+        (owner, key, value)
     )
     conn.commit()
     conn.close()
@@ -326,12 +337,12 @@ def rank_for_level(level):
     if level >= 11:  return "Sprout"
     return "Seed"
 
-def get_player_state():
+def get_player_state(owner):
     conn = get_connection()
-    row = conn.execute("SELECT xp, level FROM player_state WHERE id = 1").fetchone()
+    row = conn.execute("SELECT xp, level FROM player_state WHERE owner = ?", (owner,)).fetchone()
     conn.close()
-    level = row["level"]
-    xp = row["xp"]
+    level = row["level"] if row else 1
+    xp = row["xp"] if row else 0
     needed = xp_for_level(level)
     return {
         "xp": xp,
@@ -341,17 +352,21 @@ def get_player_state():
         "rank": rank_for_level(level),
     }
 
-def add_xp(amount):
+def add_xp(owner, amount):
     conn = get_connection()
-    row = conn.execute("SELECT xp, level FROM player_state WHERE id = 1").fetchone()
-    xp = row["xp"] + amount
-    level = row["level"]
+    row = conn.execute("SELECT xp, level FROM player_state WHERE owner = ?", (owner,)).fetchone()
+    xp = (row["xp"] if row else 0) + amount
+    level = row["level"] if row else 1
     needed = xp_for_level(level)
     while xp >= needed:
         xp -= needed
         level += 1
         needed = xp_for_level(level)
-    conn.execute("UPDATE player_state SET xp = ?, level = ? WHERE id = 1", (xp, level))
+    conn.execute(
+        "INSERT INTO player_state (owner, xp, level) VALUES (?, ?, ?) "
+        "ON CONFLICT(owner) DO UPDATE SET xp = excluded.xp, level = excluded.level",
+        (owner, xp, level)
+    )
     conn.commit()
     conn.close()
 
