@@ -1,7 +1,30 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
+import os
+import uuid
+from datetime import timedelta
+
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session
 from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, get_recent_notes, add_xp, get_player_state
 
 app = Flask(__name__)
+
+# SECRET_KEY must be set (and kept stable) in the real deployment's environment -
+# it signs each browser's session cookie. If it changes, every existing cookie
+# stops validating and all anonymous per-browser data becomes unreachable.
+IS_PRODUCTION = os.environ.get("SECRET_KEY") is not None
+app.secret_key = os.environ.get("SECRET_KEY", "dev-only-secret-do-not-use-in-production")
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=IS_PRODUCTION,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=365),
+)
+
+@app.before_request
+def assign_browser_identity():
+    session.permanent = True
+    if "uid" not in session:
+        session["uid"] = uuid.uuid4().hex
 
 PALETTE = ['#D96A34', '#8E9B4B', '#E8A93C', '#DD8FBE', '#C56B4A', '#7C9082', '#B58463', '#5A3A2A']
 
@@ -387,4 +410,4 @@ def log_habit(habit_id):
 
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
+    app.run(debug=not IS_PRODUCTION)
