@@ -81,6 +81,54 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_habits_owner ON habits(owner)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_categories_owner ON categories(owner)")
 
+    # habits.name and categories.name were UNIQUE globally, from before multi-user
+    # existed. SQLite can't alter that constraint in place, so the tables are
+    # rebuilt with a per-owner UNIQUE(owner, name) instead - otherwise two
+    # different browsers could never both have a habit named e.g. "Exercise".
+    # Guarded by the presence of the new index, so this only runs once.
+    cursor.execute("PRAGMA index_list(habits)")
+    if not any(row[1] == "idx_habits_owner_name" for row in cursor.fetchall()):
+        cursor.execute("ALTER TABLE habits RENAME TO habits_old")
+        cursor.execute("""
+            CREATE TABLE habits (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                created_at DATE DEFAULT (DATE('now')),
+                category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+                repeat_days TEXT NOT NULL DEFAULT '1111111',
+                reminder_time TEXT DEFAULT NULL,
+                icon TEXT DEFAULT 'check',
+                color TEXT DEFAULT '#D96A34',
+                owner TEXT
+            )
+        """)
+        cursor.execute("""
+            INSERT INTO habits (id, name, created_at, category_id, repeat_days, reminder_time, icon, color, owner)
+            SELECT id, name, created_at, category_id, repeat_days, reminder_time, icon, color, owner FROM habits_old
+        """)
+        cursor.execute("DROP TABLE habits_old")
+        cursor.execute("CREATE UNIQUE INDEX idx_habits_owner_name ON habits(owner, name)")
+        cursor.execute("CREATE INDEX idx_habits_owner ON habits(owner)")
+
+    cursor.execute("PRAGMA index_list(categories)")
+    if not any(row[1] == "idx_categories_owner_name" for row in cursor.fetchall()):
+        cursor.execute("ALTER TABLE categories RENAME TO categories_old")
+        cursor.execute("""
+            CREATE TABLE categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                created_at DATE DEFAULT (DATE('now')),
+                owner TEXT
+            )
+        """)
+        cursor.execute("""
+            INSERT INTO categories (id, name, created_at, owner)
+            SELECT id, name, created_at, owner FROM categories_old
+        """)
+        cursor.execute("DROP TABLE categories_old")
+        cursor.execute("CREATE UNIQUE INDEX idx_categories_owner_name ON categories(owner, name)")
+        cursor.execute("CREATE INDEX idx_categories_owner ON categories(owner)")
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS preferences (
             key TEXT PRIMARY KEY,
@@ -132,19 +180,20 @@ def get_week_start(today, start_week):
         return today - timedelta(days=(today.weekday() + 1) % 7)
     return today - timedelta(days=today.weekday())
 
-def count_perfect_days(start, end, habit_count):
+def count_perfect_days(start, end, habit_count, owner):
     if habit_count == 0:
         return 0
     conn = get_connection()
     result = conn.execute("""
         SELECT COUNT(*) FROM (
-            SELECT logged_date
-            FROM logs
-            WHERE logged_date BETWEEN ? AND ?
-            GROUP BY logged_date
-            HAVING COUNT(DISTINCT habit_id) = ?
+            SELECT l.logged_date
+            FROM logs l
+            JOIN habits h ON l.habit_id = h.id
+            WHERE l.logged_date BETWEEN ? AND ? AND h.owner = ?
+            GROUP BY l.logged_date
+            HAVING COUNT(DISTINCT l.habit_id) = ?
         )
-    """, (start, end, habit_count)).fetchone()[0]
+    """, (start, end, owner, habit_count)).fetchone()[0]
     conn.close()
     return result
 
@@ -178,9 +227,9 @@ def get_recent_notes(habit_id, limit=8):
     conn.close()
     return [{"date": row["logged_date"], "notes": row["notes"]} for row in rows]
 
-def get_habit(habit_id):
+def get_habit(habit_id, owner):
     conn = get_connection()
-    habit = conn.execute("SELECT * FROM habits WHERE id = ?", (habit_id,)).fetchone()
+    habit = conn.execute("SELECT * FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
     conn.close()
     return habit
 
@@ -198,30 +247,33 @@ def get_logs_for_month(habit_id, year, month):
     conn.close()
     return {row["logged_date"]: row["notes"] for row in rows}
 
-def get_todays_notes():
+def get_todays_notes(owner):
     conn = get_connection()
     today = date.today().isoformat()
-    rows = conn.execute(
-        "SELECT habit_id, notes FROM logs WHERE logged_date = ? AND notes IS NOT NULL AND notes != ''",
-        (today,)
-    ).fetchall()
+    rows = conn.execute("""
+        SELECT l.habit_id, l.notes FROM logs l
+        JOIN habits h ON l.habit_id = h.id
+        WHERE l.logged_date = ? AND l.notes IS NOT NULL AND l.notes != '' AND h.owner = ?
+    """, (today, owner)).fetchall()
     conn.close()
     return {row["habit_id"]: row["notes"] for row in rows}
 
-def get_categories():
+def get_categories(owner):
     conn = get_connection()
-    cats = conn.execute("SELECT * FROM categories ORDER BY name").fetchall()
+    cats = conn.execute("SELECT * FROM categories WHERE owner = ? ORDER BY name", (owner,)).fetchall()
     conn.close()
     return cats
 
-def get_weekly_counts(start_week="monday"):
+def get_weekly_counts(owner, start_week="monday"):
     conn = get_connection()
     today = date.today()
     week_start = get_week_start(today, start_week)
-    rows = conn.execute(
-        "SELECT habit_id, COUNT(*) as count FROM logs WHERE logged_date BETWEEN ? AND ? GROUP BY habit_id",
-        (week_start.isoformat(), today.isoformat())
-    ).fetchall()
+    rows = conn.execute("""
+        SELECT l.habit_id, COUNT(*) as count FROM logs l
+        JOIN habits h ON l.habit_id = h.id
+        WHERE l.logged_date BETWEEN ? AND ? AND h.owner = ?
+        GROUP BY l.habit_id
+    """, (week_start.isoformat(), today.isoformat(), owner)).fetchall()
     conn.close()
     return {row["habit_id"]: row["count"] for row in rows}
 
@@ -241,13 +293,13 @@ def get_weekly_summary():
     conn.close()
     return summary
 
-def get_monthly_summary():
+def get_monthly_summary(owner):
     conn = get_connection()
     today = date.today()
     month_start = today.replace(day=1)
     days_in_month = (today - month_start).days + 1
 
-    habits = conn.execute("SELECT * FROM habits ORDER BY created_at DESC").fetchall()
+    habits = conn.execute("SELECT * FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
     summary = []
     for habit in habits:
         count = conn.execute(

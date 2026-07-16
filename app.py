@@ -47,18 +47,22 @@ def index():
     from datetime import date, timedelta
     today_date = date.today()
     today = today_date.isoformat()
+    owner = session["uid"]
 
     conn = get_connection()
     habits = conn.execute("""
         SELECT h.*, c.name as category_name
         FROM habits h
-        LEFT JOIN categories c ON h.category_id = c.id
+        LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
+        WHERE h.owner = ?
         ORDER BY h.created_at DESC
-    """).fetchall()
+    """, (owner,)).fetchall()
     logged_today = set(
-        row["habit_id"] for row in conn.execute(
-            "SELECT habit_id FROM logs WHERE logged_date = ?", (today,)
-        ).fetchall()
+        row["habit_id"] for row in conn.execute("""
+            SELECT l.habit_id FROM logs l
+            JOIN habits h ON l.habit_id = h.id
+            WHERE l.logged_date = ? AND h.owner = ?
+        """, (today, owner)).fetchall()
     )
     conn.close()
 
@@ -81,9 +85,9 @@ def index():
     day_month = f"{today_date.day} {today_date.strftime('%B')}"
 
     streaks = {habit["id"]: get_streak(habit["id"]) for habit in habits}
-    weekly_counts = get_weekly_counts(prefs["start_week"])
-    categories = get_categories()
-    todays_notes = get_todays_notes()
+    weekly_counts = get_weekly_counts(owner, prefs["start_week"])
+    categories = get_categories(owner)
+    todays_notes = get_todays_notes(owner)
     pending_reminders = [
         {"name": h["name"], "time": h["reminder_time"]}
         for h in habits
@@ -105,20 +109,21 @@ def index():
 
 @app.route("/add", methods=["POST"])
 def add_habit():
+    owner = session["uid"]
     name = request.form.get("name", "").strip()[:100]
     category_id = request.form.get("category_id") or None
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
     reminder_time = request.form.get("reminder_time") or None
     icon = request.form.get("icon") or "check"
     conn = get_connection()
-    existing_count = conn.execute("SELECT COUNT(*) FROM habits").fetchone()[0]
+    existing_count = conn.execute("SELECT COUNT(*) FROM habits WHERE owner = ?", (owner,)).fetchone()[0]
     default_color = PALETTE[existing_count % len(PALETTE)]
     color = request.form.get("color") or default_color
     if name:
         try:
             conn.execute(
-                "INSERT INTO habits (name, category_id, repeat_days, reminder_time, icon, color) VALUES (?, ?, ?, ?, ?, ?)",
-                (name, category_id, repeat_days, reminder_time, icon, color)
+                "INSERT INTO habits (name, category_id, repeat_days, reminder_time, icon, color, owner) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (name, category_id, repeat_days, reminder_time, icon, color, owner)
             )
             conn.commit()
         except Exception:
@@ -128,21 +133,25 @@ def add_habit():
 
 @app.route("/delete/<int:habit_id>")
 def delete_habit(habit_id):
+    owner = session["uid"]
     conn = get_connection()
-    conn.execute("DELETE FROM habits WHERE id = ?", (habit_id,))
-    conn.execute("DELETE FROM logs WHERE habit_id = ?", (habit_id,))
-    conn.commit()
+    owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
+    if owned:
+        conn.execute("DELETE FROM habits WHERE id = ?", (habit_id,))
+        conn.execute("DELETE FROM logs WHERE habit_id = ?", (habit_id,))
+        conn.commit()
     conn.close()
     return redirect(url_for("index"))
 
 @app.route("/monthly")
 def monthly_summary():
-    summary = get_monthly_summary()
+    summary = get_monthly_summary(session["uid"])
     return render_template("monthly.html", summary=summary)
 
 @app.route("/weekly")
 def weekly_summary():
     from datetime import date
+    owner = session["uid"]
     today = date.today()
     prefs = get_preferences()
     week_start = get_week_start(today, prefs["start_week"])
@@ -150,7 +159,7 @@ def weekly_summary():
     days_elapsed_this_week = (today - week_start).days + 1
 
     conn = get_connection()
-    habits = conn.execute("SELECT id, name, category_id, color FROM habits ORDER BY created_at DESC").fetchall()
+    habits = conn.execute("SELECT id, name, category_id, color FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
 
     habit_data = []
     for habit in habits:
@@ -186,8 +195,8 @@ def weekly_summary():
     month_rate = int(month_total / month_possible * 100) if month_possible > 0 else 0
 
     habit_count = len(habits)
-    perfect_week = count_perfect_days(week_start.isoformat(), today.isoformat(), habit_count)
-    perfect_month = count_perfect_days(month_start.isoformat(), today.isoformat(), habit_count)
+    perfect_week = count_perfect_days(week_start.isoformat(), today.isoformat(), habit_count, owner)
+    perfect_month = count_perfect_days(month_start.isoformat(), today.isoformat(), habit_count, owner)
 
     return render_template("weekly.html",
         habit_data=habit_data,
@@ -199,6 +208,7 @@ def weekly_summary():
 
 @app.route("/edit/<int:habit_id>", methods=["POST"])
 def edit_habit(habit_id):
+    owner = session["uid"]
     name = request.form.get("name", "").strip()[:100]
     category_id = request.form.get("category_id") or None
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
@@ -209,8 +219,8 @@ def edit_habit(habit_id):
         conn = get_connection()
         try:
             conn.execute(
-                "UPDATE habits SET name = ?, category_id = ?, repeat_days = ?, reminder_time = ?, icon = ?, color = ? WHERE id = ?",
-                (name, category_id, repeat_days, reminder_time, icon, color, habit_id)
+                "UPDATE habits SET name = ?, category_id = ?, repeat_days = ?, reminder_time = ?, icon = ?, color = ? WHERE id = ? AND owner = ?",
+                (name, category_id, repeat_days, reminder_time, icon, color, habit_id, owner)
             )
             conn.commit()
         except Exception:
@@ -220,11 +230,12 @@ def edit_habit(habit_id):
 
 @app.route("/category/add", methods=["POST"])
 def add_category():
+    owner = session["uid"]
     name = request.form.get("name", "").strip()[:50]
     if name:
         conn = get_connection()
         try:
-            conn.execute("INSERT INTO categories (name) VALUES (?)", (name,))
+            conn.execute("INSERT INTO categories (name, owner) VALUES (?, ?)", (name, owner))
             conn.commit()
         except Exception:
             pass
@@ -233,9 +244,10 @@ def add_category():
 
 @app.route("/category/delete/<int:category_id>")
 def delete_category(category_id):
+    owner = session["uid"]
     conn = get_connection()
-    conn.execute("UPDATE habits SET category_id = NULL WHERE category_id = ?", (category_id,))
-    conn.execute("DELETE FROM categories WHERE id = ?", (category_id,))
+    conn.execute("UPDATE habits SET category_id = NULL WHERE category_id = ? AND owner = ?", (category_id, owner))
+    conn.execute("DELETE FROM categories WHERE id = ? AND owner = ?", (category_id, owner))
     conn.commit()
     conn.close()
     next_url = request.args.get('next', url_for('index'))
@@ -245,19 +257,21 @@ def delete_category(category_id):
 
 @app.route("/calendar")
 def calendar_index():
+    owner = session["uid"]
     conn = get_connection()
     habits = conn.execute("""
         SELECT h.*, c.name as category_name
         FROM habits h
-        LEFT JOIN categories c ON h.category_id = c.id
+        LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
+        WHERE h.owner = ?
         ORDER BY h.created_at DESC
-    """).fetchall()
+    """, (owner,)).fetchall()
     conn.close()
     return render_template("calendar_index.html", habits=habits)
 
 @app.route("/settings")
 def settings():
-    categories = get_categories()
+    categories = get_categories(session["uid"])
     prefs = get_preferences()
     return render_template("settings.html", categories=categories, prefs=prefs)
 
@@ -277,10 +291,11 @@ def set_start_week():
 
 @app.route("/reset", methods=["POST"])
 def reset_all():
+    owner = session["uid"]
     conn = get_connection()
-    conn.execute("DELETE FROM logs")
-    conn.execute("DELETE FROM habits")
-    conn.execute("DELETE FROM categories")
+    conn.execute("DELETE FROM logs WHERE habit_id IN (SELECT id FROM habits WHERE owner = ?)", (owner,))
+    conn.execute("DELETE FROM habits WHERE owner = ?", (owner,))
+    conn.execute("DELETE FROM categories WHERE owner = ?", (owner,))
     conn.commit()
     conn.close()
     return redirect(url_for("index"))
@@ -290,7 +305,7 @@ def habit_calendar(habit_id):
     import calendar as cal_module
     from datetime import date
 
-    habit = get_habit(habit_id)
+    habit = get_habit(habit_id, session["uid"])
     if not habit:
         return redirect(url_for("index"))
 
@@ -359,8 +374,9 @@ def export_csv():
         SELECT h.name AS habit, l.logged_date AS date, l.notes
         FROM logs l
         JOIN habits h ON l.habit_id = h.id
+        WHERE h.owner = ?
         ORDER BY h.name, l.logged_date
-    """).fetchall()
+    """, (session["uid"],)).fetchall()
     conn.close()
 
     output = io.StringIO()
@@ -378,8 +394,15 @@ def export_csv():
 @app.route("/log/<int:habit_id>", methods=["POST"])
 def log_habit(habit_id):
     from datetime import date
-    notes = request.form.get("notes", "").strip()[:500]
+    owner = session["uid"]
     conn = get_connection()
+
+    owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
+    if not owned:
+        conn.close()
+        return jsonify({"done": False}), 404
+
+    notes = request.form.get("notes", "").strip()[:500]
     cursor = conn.cursor()
     cursor.execute(
         "INSERT OR IGNORE INTO logs (habit_id, notes) VALUES (?, ?)",
@@ -390,11 +413,13 @@ def log_habit(habit_id):
 
     today = date.today()
     today_weekday = today.weekday()
-    all_habits = conn.execute("SELECT id, repeat_days FROM habits").fetchall()
+    all_habits = conn.execute("SELECT id, repeat_days FROM habits WHERE owner = ?", (owner,)).fetchall()
     scheduled = [h for h in all_habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"]
-    logged_count = conn.execute(
-        "SELECT COUNT(*) FROM logs WHERE logged_date = ?", (today.isoformat(),)
-    ).fetchone()[0]
+    logged_count = conn.execute("""
+        SELECT COUNT(*) FROM logs l
+        JOIN habits h ON l.habit_id = h.id
+        WHERE l.logged_date = ? AND h.owner = ?
+    """, (today.isoformat(), owner)).fetchone()[0]
     conn.close()
 
     if new_log:
