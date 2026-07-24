@@ -1,3 +1,13 @@
+/* Self-hosted font (variable weight axis 400-800, Latin subset) */
+
+@font-face {
+    font-family: 'Hanken Grotesk';
+    font-style: normal;
+    font-weight: 400 800;
+    font-display: swap;
+    src: url('/static/hanken-grotesk.woff2') format('woff2');
+}
+
 /* Design tokens */
 
 :root {
