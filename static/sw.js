@@ -1,7 +1,12 @@
-const CACHE_NAME = 'habit-tracker-v2';
+const CACHE_NAME = 'habit-tracker-v3';
 const STATIC_ASSETS = [
     '/static/style.css',
+    '/static/lucide.min.js',
+    '/static/hanken-grotesk.woff2',
+    '/manifest.json',
     '/static/icons/icon-192.png',
+    '/static/icons/icon-512.png',
+    '/static/icons/icon-maskable.png',
 ];
 
 self.addEventListener('install', (e) => {
