@@ -29,7 +29,7 @@
                     <span class="xp-count">{{ player.xp }}/{{ player.xp_needed }} XP</span>
                 </div>
                 <div class="xp-bar-track">
-                    <div class="xp-bar-fill" id="xp-bar-fill" style="width: {{ player.pct }}%"></div>
+                    <div class="xp-bar-fill" id="xp-bar-fill" data-pct="{{ player.pct }}"></div>
                 </div>
             </div>
             <a href="/" class="tab-btn" id="tab-today">
@@ -59,6 +59,15 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js');
         }
+
+        // Apply per-element colors/widths from data attributes instead of
+        // Jinja-interpolated inline styles, on every page.
+        document.querySelectorAll('[data-color]').forEach(function(el) {
+            el.style.background = el.dataset.color;
+        });
+        document.querySelectorAll('[data-pct]').forEach(function(el) {
+            el.style.width = el.dataset.pct + '%';
+        });
 
         // Global sheet helpers (used by index, settings, and any page with sheets)
         var sheetLastFocused = {};

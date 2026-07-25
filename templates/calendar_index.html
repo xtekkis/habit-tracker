@@ -9,7 +9,7 @@
 <div class="habit-list">
     {% for habit in habits %}
     <a href="/habit/{{ habit['id'] }}/calendar" class="habit-card habit-card-link">
-        <div class="habit-tile" style="background: {{ habit['color'] or '#D96A34' }}">
+        <div class="habit-tile" data-color="{{ habit['color'] or '#D96A34' }}">
             <i data-lucide="{{ habit['icon'] or 'check' }}" aria-hidden="true"></i>
         </div>
         <div class="habit-body">

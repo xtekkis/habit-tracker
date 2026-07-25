@@ -43,7 +43,7 @@
     {% for habit in habits %}
     <div class="habit-card {% if habit['id'] in logged_today %}done{% endif %}" data-category="{{ habit['category_id'] or '' }}">
 
-        <div class="habit-tile" style="background: {{ habit['color'] or '#D96A34' }}">
+        <div class="habit-tile" data-color="{{ habit['color'] or '#D96A34' }}">
             <i data-lucide="{{ habit['icon'] or 'check' }}" aria-hidden="true"></i>
         </div>
 
@@ -56,7 +56,7 @@
             </div>
             {% set count = weekly_counts.get(habit["id"], 0) %}
             <div class="progress-bar">
-                <div class="progress-fill" style="background: {{ habit['color'] or '#D96A34' }}" id="bar-{{ habit['id'] }}" data-count="{{ count }}" data-width="{{ (count / 7 * 100) | int }}"></div>
+                <div class="progress-fill" data-color="{{ habit['color'] or '#D96A34' }}" id="bar-{{ habit['id'] }}" data-count="{{ count }}" data-width="{{ (count / 7 * 100) | int }}"></div>
             </div>
             {% if todays_notes.get(habit["id"]) %}
             <span class="todays-note">{{ todays_notes[habit["id"]] }}</span>
@@ -144,7 +144,7 @@
             <input type="hidden" name="color" id="addColorInput" value="#D96A34">
             <div class="color-picker" id="addColorPicker">
                 {% for c, cname in [('#D96A34','Clay'),('#8E9B4B','Olive'),('#E8A93C','Amber'),('#DD8FBE','Blush'),('#C56B4A','Terracotta'),('#7C9082','Sage'),('#B58463','Mocha'),('#5A3A2A','Espresso')] %}
-                <button type="button" class="color-opt {% if loop.first %}selected{% endif %}" data-color="{{ c }}" style="background: {{ c }}" aria-label="{{ cname }} color"></button>
+                <button type="button" class="color-opt {% if loop.first %}selected{% endif %}" data-color="{{ c }}" aria-label="{{ cname }} color"></button>
                 {% endfor %}
             </div>
 
@@ -211,7 +211,7 @@
             <input type="hidden" name="color" id="editColorInput" value="#D96A34">
             <div class="color-picker" id="editColorPicker">
                 {% for c, cname in [('#D96A34','Clay'),('#8E9B4B','Olive'),('#E8A93C','Amber'),('#DD8FBE','Blush'),('#C56B4A','Terracotta'),('#7C9082','Sage'),('#B58463','Mocha'),('#5A3A2A','Espresso')] %}
-                <button type="button" class="color-opt" data-color="{{ c }}" style="background: {{ c }}" aria-label="{{ cname }} color"></button>
+                <button type="button" class="color-opt" data-color="{{ c }}" aria-label="{{ cname }} color"></button>
                 {% endfor %}
             </div>
 
