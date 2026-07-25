@@ -1,6 +1,8 @@
 # Habit Tracker
 
-A habit tracker I built with Flask and SQLite. You add the habits you want to keep up with, check them off each day, and watch your streaks and XP grow over time.
+A habit tracker I built with Flask and SQLite. You add the habits you want to keep up with, check them off each day, and watch your streaks and XP grow over time. Each browser gets its own private data, so there's no login and nothing to sign up for.
+
+**Try it here:** https://xtekkis.pythonanywhere.com/
 
 ## Screenshots
 
@@ -22,7 +24,7 @@ A habit tracker I built with Flask and SQLite. You add the habits you want to ke
 - Group habits into categories and filter the day's list by them
 - Set a daily reminder time per habit (uses browser notifications)
 - Export all your check-ins to CSV whenever you want
-- Install it as an app on your phone or desktop, since it's a PWA
+- Install it as an app on your phone or desktop, since it's a PWA that works offline
 - Works nicely on mobile and switches to a two-column layout on wider screens
 
 ## Running it locally
@@ -45,8 +47,12 @@ Then open http://localhost:5000 in your browser. The database file (`habits.db`)
 
 ## Built with
 
-- Python and Flask
-- SQLite for storage
-- Jinja2 for templates
-- Plain CSS and vanilla JavaScript, no frameworks and no build step
-- Lucide for the icons and Hanken Grotesk for the font
+| Layer | Technology |
+|-------|------------|
+| Backend | Python and Flask |
+| Database | SQLite |
+| Templates | Jinja2 |
+| Styling | Plain CSS, no frameworks or build step |
+| Frontend | Vanilla JavaScript |
+| Icons | Lucide |
+| Font | Hanken Grotesk |
