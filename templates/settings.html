@@ -67,10 +67,10 @@
 
 <!-- Manage categories sheet -->
 <div class="sheet-overlay" id="categoryMgmtSheet">
-    <div class="sheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="categoryMgmtSheetTitle" tabindex="-1">
         <div class="sheet-handle"></div>
         <div class="sheet-header">
-            <h2 class="sheet-title">Categories</h2>
+            <h2 class="sheet-title" id="categoryMgmtSheetTitle">Categories</h2>
             <button class="sheet-close-btn sheet-close" data-sheet="categoryMgmtSheet" aria-label="Close">
                 <i data-lucide="x" aria-hidden="true"></i>
             </button>
@@ -97,8 +97,8 @@
 
 <!-- Reset confirmation modal -->
 <div class="modal-overlay" id="resetModal">
-    <div class="modal">
-        <h3>Reset all data</h3>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle" tabindex="-1">
+        <h3 id="resetModalTitle">Reset all data</h3>
         <p class="modal-body-text">This will permanently delete all habits, logs, and categories. This can't be undone.</p>
         <div class="modal-actions">
             <form action="/reset" method="POST" style="display:contents">
@@ -123,20 +123,35 @@ document.getElementById('manageCategoriesBtn').addEventListener('click', functio
     openSheet('categoryMgmtSheet');
 });
 
+var resetModalLastFocused = null;
+
 document.getElementById('resetBtn').addEventListener('click', function() {
+    resetModalLastFocused = document.activeElement;
     document.getElementById('resetModal').classList.add('active');
+    setTimeout(function() {
+        document.querySelector('#resetModal .modal').focus();
+    }, 50);
 });
-document.getElementById('closeResetModal').addEventListener('click', function() {
+
+function closeResetModal() {
     document.getElementById('resetModal').classList.remove('active');
-});
+    if (resetModalLastFocused) {
+        resetModalLastFocused.focus();
+        resetModalLastFocused = null;
+    }
+}
+
+document.getElementById('closeResetModal').addEventListener('click', closeResetModal);
 document.getElementById('resetModal').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('active');
+    if (e.target === this) closeResetModal();
 });
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         document.querySelectorAll('.sheet-overlay.active').forEach(function(o) { closeSheet(o.id); });
-        document.getElementById('resetModal').classList.remove('active');
+        if (document.getElementById('resetModal').classList.contains('active')) {
+            closeResetModal();
+        }
     }
 });
 </script>

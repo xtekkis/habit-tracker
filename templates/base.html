@@ -61,17 +61,27 @@
         }
 
         // Global sheet helpers (used by index, settings, and any page with sheets)
+        var sheetLastFocused = {};
         function openSheet(id) {
             var el = document.getElementById(id);
             if (!el) return;
+            sheetLastFocused[id] = document.activeElement;
             el.classList.add('active');
             document.documentElement.classList.add('no-scroll');
+            var panel = el.querySelector('.sheet');
+            if (panel) {
+                setTimeout(function() { panel.focus(); }, 50);
+            }
         }
         function closeSheet(id) {
             var el = document.getElementById(id);
             if (el) el.classList.remove('active');
             if (!document.querySelector('.sheet-overlay.active')) {
                 document.documentElement.classList.remove('no-scroll');
+            }
+            if (sheetLastFocused[id]) {
+                sheetLastFocused[id].focus();
+                sheetLastFocused[id] = null;
             }
         }
 

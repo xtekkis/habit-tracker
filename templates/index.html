@@ -106,8 +106,8 @@
 
 <!-- Delete habit confirmation modal -->
 <div class="modal-overlay" id="deleteModal">
-    <div class="modal">
-        <h3>Delete habit</h3>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" tabindex="-1">
+        <h3 id="deleteModalTitle">Delete habit</h3>
         <p class="modal-body-text">Delete "<span id="deleteHabitName"></span>"? All logs will also be removed. This can't be undone.</p>
         <div class="modal-actions">
             <form id="deleteConfirmForm" method="POST" style="display:contents">
@@ -120,10 +120,10 @@
 
 <!-- Add habit sheet -->
 <div class="sheet-overlay" id="addSheet">
-    <div class="sheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="addSheetTitle" tabindex="-1">
         <div class="sheet-handle"></div>
         <div class="sheet-header">
-            <h2 class="sheet-title">New habit</h2>
+            <h2 class="sheet-title" id="addSheetTitle">New habit</h2>
             <button class="sheet-close-btn sheet-close" data-sheet="addSheet" aria-label="Close">
                 <i data-lucide="x" aria-hidden="true"></i>
             </button>
@@ -187,10 +187,10 @@
 
 <!-- Edit habit sheet -->
 <div class="sheet-overlay" id="editSheet">
-    <div class="sheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="editSheetTitle" tabindex="-1">
         <div class="sheet-handle"></div>
         <div class="sheet-header">
-            <h2 class="sheet-title">Edit habit</h2>
+            <h2 class="sheet-title" id="editSheetTitle">Edit habit</h2>
             <button class="sheet-close-btn sheet-close" data-sheet="editSheet" aria-label="Close">
                 <i data-lucide="x" aria-hidden="true"></i>
             </button>
@@ -254,10 +254,10 @@
 
 <!-- New category sheet -->
 <div class="sheet-overlay" id="categorySheet">
-    <div class="sheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="categorySheetTitle" tabindex="-1">
         <div class="sheet-handle"></div>
         <div class="sheet-header">
-            <h2 class="sheet-title">New category</h2>
+            <h2 class="sheet-title" id="categorySheetTitle">New category</h2>
             <button class="sheet-close-btn sheet-close" data-sheet="categorySheet" aria-label="Close">
                 <i data-lucide="x" aria-hidden="true"></i>
             </button>
@@ -312,7 +312,9 @@ document.addEventListener('keydown', function(e) {
         document.querySelectorAll('.sheet-overlay.active').forEach(function(overlay) {
             closeSheet(overlay.id);
         });
-        document.getElementById('deleteModal').classList.remove('active');
+        if (document.getElementById('deleteModal').classList.contains('active')) {
+            closeDeleteModal();
+        }
     }
 });
 
@@ -402,21 +404,33 @@ document.querySelectorAll('.edit-link').forEach(function(link) {
 });
 
 // Delete confirmation modal
+var deleteModalLastFocused = null;
+
 document.querySelectorAll('.open-delete').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.preventDefault();
+        deleteModalLastFocused = document.activeElement;
         document.getElementById('deleteHabitName').textContent = this.dataset.name;
         document.getElementById('deleteConfirmForm').action = '/delete/' + this.dataset.id;
         document.getElementById('deleteModal').classList.add('active');
+        setTimeout(function() {
+            document.querySelector('#deleteModal .modal').focus();
+        }, 50);
     });
 });
 
-document.getElementById('closeDeleteModal').addEventListener('click', function() {
+function closeDeleteModal() {
     document.getElementById('deleteModal').classList.remove('active');
-});
+    if (deleteModalLastFocused) {
+        deleteModalLastFocused.focus();
+        deleteModalLastFocused = null;
+    }
+}
+
+document.getElementById('closeDeleteModal').addEventListener('click', closeDeleteModal);
 
 document.getElementById('deleteModal').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('active');
+    if (e.target === this) closeDeleteModal();
 });
 
 // Overflow menu — moved onto <body> while open so position:fixed resolves against
