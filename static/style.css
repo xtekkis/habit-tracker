@@ -145,6 +145,15 @@ body {
     z-index: 50;
 }
 
+/* In landscape on phones/small tablets, let the tab bar span the full width
+   instead of floating as a narrow bar with the page background showing on
+   both sides. Content keeps its normal centered width - only the bar changes. */
+@media (orientation: landscape) and (max-width: 1023px) {
+    .tab-bar {
+        max-width: none;
+    }
+}
+
 .tab-btn {
     display: flex;
     flex-direction: column;
