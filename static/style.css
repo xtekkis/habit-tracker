@@ -2399,6 +2399,10 @@ textarea:focus-visible,
         align-content: start;
     }
 
+    .empty-state {
+        grid-column: 1 / -1;
+    }
+
     .cal-month-nav {
         max-width: 440px;
         margin: 0 auto 20px;
