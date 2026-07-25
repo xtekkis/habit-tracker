@@ -4,6 +4,7 @@
     "description": "Track your daily habits",
     "start_url": "/",
     "display": "standalone",
+    "orientation": "any",
     "background_color": "#FBF4EC",
     "theme_color": "#432B1E",
     "icons": [
