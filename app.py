@@ -232,14 +232,27 @@ def edit_habit(habit_id):
 def add_category():
     owner = session["uid"]
     name = request.form.get("name", "").strip()[:50]
-    if name:
-        conn = get_connection()
-        try:
-            conn.execute("INSERT INTO categories (name, owner) VALUES (?, ?)", (name, owner))
-            conn.commit()
-        except Exception:
-            pass
+    is_fetch = request.headers.get("X-Requested-With") == "fetch"
+
+    if not name:
+        return (jsonify({"ok": False}), 400) if is_fetch else redirect(url_for("index"))
+
+    conn = get_connection()
+    try:
+        conn.execute("INSERT INTO categories (name, owner) VALUES (?, ?)", (name, owner))
+        conn.commit()
+    except Exception:
         conn.close()
+        return (jsonify({"ok": False}), 400) if is_fetch else redirect(url_for("index"))
+
+    if is_fetch:
+        cat = conn.execute(
+            "SELECT id, name FROM categories WHERE owner = ? AND name = ?", (owner, name)
+        ).fetchone()
+        conn.close()
+        return jsonify({"ok": True, "id": cat["id"], "name": cat["name"]})
+
+    conn.close()
     return redirect(url_for("index"))
 
 @app.route("/category/delete/<int:category_id>", methods=["POST"])

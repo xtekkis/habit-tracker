@@ -165,7 +165,7 @@
                 {% for cat in categories %}
                 <button type="button" class="cat-pill" data-value="{{ cat['id'] }}">{{ cat['name'] }}</button>
                 {% endfor %}
-                <button type="button" class="cat-pill cat-pill-new sheet-open" data-sheet="categorySheet">+ New</button>
+                <button type="button" class="cat-pill cat-pill-new sheet-open" data-sheet="categorySheet" data-origin="add">+ New</button>
             </div>
 
             <div class="reminder-row">
@@ -232,7 +232,7 @@
                 {% for cat in categories %}
                 <button type="button" class="cat-pill" data-value="{{ cat['id'] }}">{{ cat['name'] }}</button>
                 {% endfor %}
-                <button type="button" class="cat-pill cat-pill-new sheet-open" data-sheet="categorySheet">+ New</button>
+                <button type="button" class="cat-pill cat-pill-new sheet-open" data-sheet="categorySheet" data-origin="edit">+ New</button>
             </div>
 
             <div class="reminder-row">
@@ -262,9 +262,9 @@
                 <i data-lucide="x" aria-hidden="true"></i>
             </button>
         </div>
-        <form action="/category/add" method="POST">
+        <form id="categorySheetForm" action="/category/add" method="POST">
             <label class="field-label">Name</label>
-            <input type="text" name="name" placeholder="e.g. Health, Work, Personal..." required maxlength="50">
+            <input type="text" name="name" id="categorySheetInput" placeholder="e.g. Health, Work, Personal..." required maxlength="50">
             <button type="submit" class="btn-sheet-submit">Create category</button>
         </form>
     </div>
@@ -318,21 +318,71 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+// Cat pill selection helpers (shared by pre-rendered pills and newly created ones)
+function selectCategoryPill(pill, pickerId, inputId) {
+    document.querySelectorAll('#' + pickerId + ' .cat-pill').forEach(function(p) { p.classList.remove('selected'); });
+    pill.classList.add('selected');
+    document.getElementById(inputId).value = pill.dataset.value;
+}
+function wireCategoryPill(pill, pickerId, inputId) {
+    pill.addEventListener('click', function() {
+        selectCategoryPill(pill, pickerId, inputId);
+    });
+}
+function addCategoryPillTo(pickerId, inputId, id, name) {
+    var picker = document.getElementById(pickerId);
+    var newPill = document.createElement('button');
+    newPill.type = 'button';
+    newPill.className = 'cat-pill';
+    newPill.dataset.value = id;
+    newPill.textContent = name;
+    picker.insertBefore(newPill, picker.querySelector('.cat-pill-new'));
+    wireCategoryPill(newPill, pickerId, inputId);
+    selectCategoryPill(newPill, pickerId, inputId);
+}
+
 // Cat pill selection — add sheet
 document.querySelectorAll('#addCatPills .cat-pill:not(.cat-pill-new)').forEach(function(pill) {
-    pill.addEventListener('click', function() {
-        document.querySelectorAll('#addCatPills .cat-pill').forEach(function(p) { p.classList.remove('selected'); });
-        this.classList.add('selected');
-        document.getElementById('addCatInput').value = this.dataset.value;
-    });
+    wireCategoryPill(pill, 'addCatPills', 'addCatInput');
 });
 
 // Cat pill selection — edit sheet
 document.querySelectorAll('#editCatPills .cat-pill:not(.cat-pill-new)').forEach(function(pill) {
-    pill.addEventListener('click', function() {
-        document.querySelectorAll('#editCatPills .cat-pill').forEach(function(p) { p.classList.remove('selected'); });
-        this.classList.add('selected');
-        document.getElementById('editCatInput').value = this.dataset.value;
+    wireCategoryPill(pill, 'editCatPills', 'editCatInput');
+});
+
+// New category — created via fetch so it doesn't reload the page and lose
+// whatever habit the user was already filling in behind it.
+var categorySheetOrigin = 'add';
+document.querySelectorAll('.cat-pill-new').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        categorySheetOrigin = this.dataset.origin;
+    });
+});
+
+document.getElementById('categorySheetForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var input = document.getElementById('categorySheetInput');
+    var name = input.value.trim();
+    if (!name) return;
+    fetch('/category/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'fetch'
+        },
+        body: 'name=' + encodeURIComponent(name)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (!data.ok) return;
+        if (categorySheetOrigin === 'edit') {
+            addCategoryPillTo('editCatPills', 'editCatInput', data.id, data.name);
+        } else {
+            addCategoryPillTo('addCatPills', 'addCatInput', data.id, data.name);
+        }
+        input.value = '';
+        closeSheet('categorySheet');
     });
 });
 
