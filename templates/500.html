@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Something went wrong - Habit Tracker{% endblock %}
+{% block page_title %}Error{% endblock %}
+
+{% block content %}
+<div class="empty-state">
+    <div class="empty-state-icon"><i data-lucide="server-crash" aria-hidden="true"></i></div>
+    <p class="empty-state-title">Something went wrong</p>
+    <p class="empty-state-sub">That's on us. Try again in a moment, or head back to Today.</p>
+    <a href="/" class="btn-empty-add">
+        <i data-lucide="home" aria-hidden="true"></i> Back to Today
+    </a>
+</div>
+{% endblock %}

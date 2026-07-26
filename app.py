@@ -32,6 +32,14 @@ PALETTE = ['#D96A34', '#8E9B4B', '#E8A93C', '#DD8FBE', '#C56B4A', '#7C9082', '#B
 def inject_player():
     return {"player": get_player_state(session["uid"])}
 
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("404.html"), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template("500.html"), 500
+
 @app.route("/manifest.json")
 def pwa_manifest():
     return send_from_directory("static", "manifest.json", mimetype="application/manifest+json")

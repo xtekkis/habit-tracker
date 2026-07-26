@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Page not found - Habit Tracker{% endblock %}
+{% block page_title %}Not found{% endblock %}
+
+{% block content %}
+<div class="empty-state">
+    <div class="empty-state-icon"><i data-lucide="compass" aria-hidden="true"></i></div>
+    <p class="empty-state-title">Page not found</p>
+    <p class="empty-state-sub">The page you're looking for doesn't exist or may have moved.</p>
+    <a href="/" class="btn-empty-add">
+        <i data-lucide="home" aria-hidden="true"></i> Back to Today
+    </a>
+</div>
+{% endblock %}

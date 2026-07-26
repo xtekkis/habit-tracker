@@ -1510,9 +1510,24 @@ html.no-scroll {
     align-items: center;
     gap: 8px;
     padding: 14px 28px;
+    background: var(--primary);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-family: inherit;
     font-size: var(--fs-md);
     font-weight: 600;
     border-radius: var(--radius-full);
+    text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.btn-empty-add:hover {
+    background: var(--primary-hover);
+}
+
+.btn-empty-add:active {
+    transform: scale(0.97);
 }
 
 .btn-empty-add svg {
