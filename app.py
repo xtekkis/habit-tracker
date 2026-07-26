@@ -40,6 +40,10 @@ def not_found(e):
 def server_error(e):
     return render_template("500.html"), 500
 
+@app.route("/robots.txt")
+def robots():
+    return send_from_directory("static", "robots.txt", mimetype="text/plain")
+
 @app.route("/manifest.json")
 def pwa_manifest():
     return send_from_directory("static", "manifest.json", mimetype="application/manifest+json")
