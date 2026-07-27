@@ -352,7 +352,7 @@ def habit_calendar(habit_id):
     month_param = request.args.get("month", f"{today.year:04d}-{today.month:02d}")
     try:
         year, month = int(month_param[:4]), int(month_param[5:7])
-        if not (1 <= month <= 12):
+        if not (1 <= month <= 12) or not (1 <= year <= 9999):
             raise ValueError
     except (ValueError, IndexError):
         year, month = today.year, today.month
