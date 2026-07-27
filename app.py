@@ -275,8 +275,8 @@ def delete_category(category_id):
     conn.execute("DELETE FROM categories WHERE id = ? AND owner = ?", (category_id, owner))
     conn.commit()
     conn.close()
-    next_url = request.form.get('next', url_for('index'))
-    if not next_url.startswith('/'):
+    next_url = request.form.get('next')
+    if next_url not in ('/', '/settings'):
         next_url = url_for('index')
     return redirect(next_url)
 
