@@ -422,6 +422,7 @@ def export_csv():
 def log_habit(habit_id):
     from datetime import date
     owner = session["uid"]
+    today = date.today()
     conn = get_connection()
 
     owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
@@ -432,13 +433,12 @@ def log_habit(habit_id):
     notes = request.form.get("notes", "").strip()[:500]
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT OR IGNORE INTO logs (habit_id, notes) VALUES (?, ?)",
-        (habit_id, notes or None)
+        "INSERT OR IGNORE INTO logs (habit_id, logged_date, notes) VALUES (?, ?, ?)",
+        (habit_id, today.isoformat(), notes or None)
     )
     conn.commit()
     new_log = cursor.rowcount > 0
 
-    today = date.today()
     today_weekday = today.weekday()
     all_habits = conn.execute("SELECT id, repeat_days FROM habits WHERE owner = ?", (owner,)).fetchall()
     scheduled = [h for h in all_habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"]
