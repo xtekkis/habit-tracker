@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 from datetime import timedelta
 
@@ -10,8 +11,19 @@ app = Flask(__name__)
 # SECRET_KEY must be set (and kept stable) in the real deployment's environment -
 # it signs each browser's session cookie. If it changes, every existing cookie
 # stops validating and all anonymous per-browser data becomes unreachable.
-IS_PRODUCTION = os.environ.get("SECRET_KEY") is not None
-app.secret_key = os.environ.get("SECRET_KEY", "dev-only-secret-do-not-use-in-production")
+_secret_key_env = os.environ.get("SECRET_KEY")
+IS_PRODUCTION = _secret_key_env is not None
+app.secret_key = _secret_key_env or "dev-only-secret-do-not-use-in-production"
+
+if not IS_PRODUCTION:
+    print(
+        "\n"
+        "!!! WARNING: SECRET_KEY is not set. Using a public, insecure development\n"
+        "!!! secret. Session cookies can be forged and per-browser data is NOT\n"
+        "!!! private. Set the SECRET_KEY environment variable before deploying\n"
+        "!!! this app anywhere it will be reachable by others.\n",
+        file=sys.stderr
+    )
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
