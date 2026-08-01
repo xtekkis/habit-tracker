@@ -1449,10 +1449,15 @@ html.no-scroll {
     color: #fff;
 }
 
-/* Log form (invisible to layout) */
+/* Invisible-to-layout form wrapper, so a <form> around a single button
+   doesn't disturb its parent flex/grid container */
 
-.log-form {
+.form-contents {
     display: contents;
+}
+
+.cal-stats-spaced {
+    margin-top: 10px;
 }
 
 /* Empty state */

@@ -80,7 +80,7 @@
             {% for cat in categories %}
             <div class="cat-mgmt-item">
                 <span class="cat-mgmt-name">{{ cat['name'] }}</span>
-                <form action="/category/delete/{{ cat['id'] }}" method="POST" style="display:contents">
+                <form action="/category/delete/{{ cat['id'] }}" method="POST" class="form-contents">
                     <input type="hidden" name="next" value="/settings">
                     <button type="submit" class="cat-mgmt-delete" title="Delete" aria-label="Delete {{ cat['name'] }}">
                         <i data-lucide="trash-2" aria-hidden="true"></i>
@@ -101,7 +101,7 @@
         <h3 id="resetModalTitle">Reset all data</h3>
         <p class="modal-body-text">This will permanently delete all habits, logs, and categories. This can't be undone.</p>
         <div class="modal-actions">
-            <form action="/reset" method="POST" style="display:contents">
+            <form action="/reset" method="POST" class="form-contents">
                 <button type="submit" class="btn-danger">Reset everything</button>
             </form>
             <button type="button" class="btn-cancel" id="closeResetModal">Cancel</button>
