@@ -268,22 +268,6 @@ def get_weekly_counts(owner, start_week="monday"):
     conn.close()
     return {row["habit_id"]: row["count"] for row in rows}
 
-def get_weekly_summary():
-    conn = get_connection()
-    today = date.today()
-    week_ago = today - timedelta(days=6)
-
-    habits = conn.execute("SELECT * FROM habits ORDER BY created_at DESC").fetchall()
-    summary = []
-    for habit in habits:
-        count = conn.execute(
-            "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
-            (habit["id"], week_ago.isoformat(), today.isoformat())
-        ).fetchone()[0]
-        summary.append({"name": habit["name"], "count": count, "out_of": 7})
-    conn.close()
-    return summary
-
 def get_monthly_summary(owner):
     conn = get_connection()
     today = date.today()

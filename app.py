@@ -403,6 +403,13 @@ def habit_calendar(habit_id):
         month_days=month_days,
     )
 
+def _csv_safe(value):
+    # Prefix values that would otherwise be interpreted as a formula by
+    # Excel/Sheets (e.g. a habit named "=cmd|...") so they render as plain text.
+    if value and value[0] in ("=", "+", "-", "@"):
+        return "'" + value
+    return value
+
 @app.route("/export/csv")
 def export_csv():
     import csv
@@ -423,7 +430,7 @@ def export_csv():
     writer = csv.writer(output)
     writer.writerow(["Habit", "Date"])
     for row in rows:
-        writer.writerow([row["habit"], row["date"]])
+        writer.writerow([_csv_safe(row["habit"]), row["date"]])
 
     return Response(
         output.getvalue(),
