@@ -6,7 +6,7 @@ from datetime import timedelta
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash
 from flask.sessions import SecureCookieSessionInterface
-from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner
+from database import init_db, db_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner
 
 app = Flask(__name__)
 
@@ -111,22 +111,21 @@ def index():
     today = today_date.isoformat()
     owner = session["uid"]
 
-    conn = get_connection()
-    habits = conn.execute("""
-        SELECT h.*, c.name as category_name
-        FROM habits h
-        LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
-        WHERE h.owner = ?
-        ORDER BY h.created_at DESC
-    """, (owner,)).fetchall()
-    logged_today = set(
-        row["habit_id"] for row in conn.execute("""
-            SELECT l.habit_id FROM logs l
-            JOIN habits h ON l.habit_id = h.id
-            WHERE l.logged_date = ? AND h.owner = ?
-        """, (today, owner)).fetchall()
-    )
-    conn.close()
+    with db_connection() as conn:
+        habits = conn.execute("""
+            SELECT h.*, c.name as category_name
+            FROM habits h
+            LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
+            WHERE h.owner = ?
+            ORDER BY h.created_at DESC
+        """, (owner,)).fetchall()
+        logged_today = set(
+            row["habit_id"] for row in conn.execute("""
+                SELECT l.habit_id FROM logs l
+                JOIN habits h ON l.habit_id = h.id
+                WHERE l.logged_date = ? AND h.owner = ?
+            """, (today, owner)).fetchall()
+        )
 
     today_weekday = today_date.weekday()  # Mon=0..Sun=6
     habits = [h for h in habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"]
@@ -177,32 +176,30 @@ def add_habit():
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
     reminder_time = request.form.get("reminder_time") or None
     icon = request.form.get("icon") or "check"
-    conn = get_connection()
-    existing_count = conn.execute("SELECT COUNT(*) FROM habits WHERE owner = ?", (owner,)).fetchone()[0]
-    default_color = PALETTE[existing_count % len(PALETTE)]
-    color = request.form.get("color") or default_color
-    if name:
-        try:
-            conn.execute(
-                "INSERT INTO habits (name, category_id, repeat_days, reminder_time, icon, color, owner) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (name, category_id, repeat_days, reminder_time, icon, color, owner)
-            )
-            conn.commit()
-        except sqlite3.IntegrityError:
-            flash(f'A habit named "{name}" already exists.', 'error')
-    conn.close()
+    with db_connection() as conn:
+        existing_count = conn.execute("SELECT COUNT(*) FROM habits WHERE owner = ?", (owner,)).fetchone()[0]
+        default_color = PALETTE[existing_count % len(PALETTE)]
+        color = request.form.get("color") or default_color
+        if name:
+            try:
+                conn.execute(
+                    "INSERT INTO habits (name, category_id, repeat_days, reminder_time, icon, color, owner) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (name, category_id, repeat_days, reminder_time, icon, color, owner)
+                )
+                conn.commit()
+            except sqlite3.IntegrityError:
+                flash(f'A habit named "{name}" already exists.', 'error')
     return redirect(url_for("index"))
 
 @app.route("/delete/<int:habit_id>", methods=["POST"])
 def delete_habit(habit_id):
     owner = session["uid"]
-    conn = get_connection()
-    owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
-    if owned:
-        conn.execute("DELETE FROM habits WHERE id = ?", (habit_id,))
-        conn.execute("DELETE FROM logs WHERE habit_id = ?", (habit_id,))
-        conn.commit()
-    conn.close()
+    with db_connection() as conn:
+        owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
+        if owned:
+            conn.execute("DELETE FROM habits WHERE id = ?", (habit_id,))
+            conn.execute("DELETE FROM logs WHERE habit_id = ?", (habit_id,))
+            conn.commit()
     return redirect(url_for("index"))
 
 @app.route("/monthly")
@@ -220,28 +217,27 @@ def weekly_summary():
     month_start = today.replace(day=1)
     days_elapsed_this_week = (today - week_start).days + 1
 
-    conn = get_connection()
-    habits = conn.execute("SELECT id, name, category_id, color FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
+    with db_connection() as conn:
+        habits = conn.execute("SELECT id, name, category_id, color FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
 
-    habit_data = []
-    for habit in habits:
-        week_count = conn.execute(
-            "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
-            (habit['id'], week_start.isoformat(), today.isoformat())
-        ).fetchone()[0]
-        month_count = conn.execute(
-            "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
-            (habit['id'], month_start.isoformat(), today.isoformat())
-        ).fetchone()[0]
-        habit_data.append({
-            'name': habit['name'],
-            'color': habit['color'] or '#D96A34',
-            'week_count': week_count,
-            'week_pct': int(week_count / days_elapsed_this_week * 100),
-            'month_count': month_count,
-            'month_pct': int(month_count / today.day * 100),
-        })
-    conn.close()
+        habit_data = []
+        for habit in habits:
+            week_count = conn.execute(
+                "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
+                (habit['id'], week_start.isoformat(), today.isoformat())
+            ).fetchone()[0]
+            month_count = conn.execute(
+                "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
+                (habit['id'], month_start.isoformat(), today.isoformat())
+            ).fetchone()[0]
+            habit_data.append({
+                'name': habit['name'],
+                'color': habit['color'] or '#D96A34',
+                'week_count': week_count,
+                'week_pct': int(week_count / days_elapsed_this_week * 100),
+                'month_count': month_count,
+                'month_pct': int(month_count / today.day * 100),
+            })
 
     streaks = [get_streak(h['id']) for h in habits]
     best_streak = max(streaks) if streaks else 0
@@ -280,16 +276,15 @@ def edit_habit(habit_id):
     icon = request.form.get("icon") or "check"
     color = request.form.get("color") or "#D96A34"
     if name:
-        conn = get_connection()
-        try:
-            conn.execute(
-                "UPDATE habits SET name = ?, category_id = ?, repeat_days = ?, reminder_time = ?, icon = ?, color = ? WHERE id = ? AND owner = ?",
-                (name, category_id, repeat_days, reminder_time, icon, color, habit_id, owner)
-            )
-            conn.commit()
-        except sqlite3.IntegrityError:
-            flash(f'A habit named "{name}" already exists.', 'error')
-        conn.close()
+        with db_connection() as conn:
+            try:
+                conn.execute(
+                    "UPDATE habits SET name = ?, category_id = ?, repeat_days = ?, reminder_time = ?, icon = ?, color = ? WHERE id = ? AND owner = ?",
+                    (name, category_id, repeat_days, reminder_time, icon, color, habit_id, owner)
+                )
+                conn.commit()
+            except sqlite3.IntegrityError:
+                flash(f'A habit named "{name}" already exists.', 'error')
     return redirect(url_for("index"))
 
 @app.route("/category/add", methods=["POST"])
@@ -305,36 +300,32 @@ def add_category():
         flash(error, "error")
         return redirect(url_for("index"))
 
-    conn = get_connection()
-    try:
-        conn.execute("INSERT INTO categories (name, owner) VALUES (?, ?)", (name, owner))
-        conn.commit()
-    except sqlite3.IntegrityError:
-        conn.close()
-        error = f'A category named "{name}" already exists.'
+    with db_connection() as conn:
+        try:
+            conn.execute("INSERT INTO categories (name, owner) VALUES (?, ?)", (name, owner))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            error = f'A category named "{name}" already exists.'
+            if is_fetch:
+                return jsonify({"ok": False, "error": error}), 400
+            flash(error, "error")
+            return redirect(url_for("index"))
+
         if is_fetch:
-            return jsonify({"ok": False, "error": error}), 400
-        flash(error, "error")
-        return redirect(url_for("index"))
+            cat = conn.execute(
+                "SELECT id, name FROM categories WHERE owner = ? AND name = ?", (owner, name)
+            ).fetchone()
+            return jsonify({"ok": True, "id": cat["id"], "name": cat["name"]})
 
-    if is_fetch:
-        cat = conn.execute(
-            "SELECT id, name FROM categories WHERE owner = ? AND name = ?", (owner, name)
-        ).fetchone()
-        conn.close()
-        return jsonify({"ok": True, "id": cat["id"], "name": cat["name"]})
-
-    conn.close()
     return redirect(url_for("index"))
 
 @app.route("/category/delete/<int:category_id>", methods=["POST"])
 def delete_category(category_id):
     owner = session["uid"]
-    conn = get_connection()
-    conn.execute("UPDATE habits SET category_id = NULL WHERE category_id = ? AND owner = ?", (category_id, owner))
-    conn.execute("DELETE FROM categories WHERE id = ? AND owner = ?", (category_id, owner))
-    conn.commit()
-    conn.close()
+    with db_connection() as conn:
+        conn.execute("UPDATE habits SET category_id = NULL WHERE category_id = ? AND owner = ?", (category_id, owner))
+        conn.execute("DELETE FROM categories WHERE id = ? AND owner = ?", (category_id, owner))
+        conn.commit()
     next_url = request.form.get('next')
     if next_url not in ('/', '/settings'):
         next_url = url_for('index')
@@ -343,15 +334,14 @@ def delete_category(category_id):
 @app.route("/calendar")
 def calendar_index():
     owner = session["uid"]
-    conn = get_connection()
-    habits = conn.execute("""
-        SELECT h.*, c.name as category_name
-        FROM habits h
-        LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
-        WHERE h.owner = ?
-        ORDER BY h.created_at DESC
-    """, (owner,)).fetchall()
-    conn.close()
+    with db_connection() as conn:
+        habits = conn.execute("""
+            SELECT h.*, c.name as category_name
+            FROM habits h
+            LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
+            WHERE h.owner = ?
+            ORDER BY h.created_at DESC
+        """, (owner,)).fetchall()
     return render_template("calendar_index.html", habits=habits)
 
 @app.route("/settings")
@@ -379,12 +369,11 @@ def set_start_week():
 @app.route("/reset", methods=["POST"])
 def reset_all():
     owner = session["uid"]
-    conn = get_connection()
-    conn.execute("DELETE FROM logs WHERE habit_id IN (SELECT id FROM habits WHERE owner = ?)", (owner,))
-    conn.execute("DELETE FROM habits WHERE owner = ?", (owner,))
-    conn.execute("DELETE FROM categories WHERE owner = ?", (owner,))
-    conn.commit()
-    conn.close()
+    with db_connection() as conn:
+        conn.execute("DELETE FROM logs WHERE habit_id IN (SELECT id FROM habits WHERE owner = ?)", (owner,))
+        conn.execute("DELETE FROM habits WHERE owner = ?", (owner,))
+        conn.execute("DELETE FROM categories WHERE owner = ?", (owner,))
+        conn.commit()
     return redirect(url_for("index"))
 
 @app.route("/habit/<int:habit_id>/calendar")
@@ -457,15 +446,14 @@ def export_csv():
     import io
     from flask import Response
 
-    conn = get_connection()
-    rows = conn.execute("""
-        SELECT h.name AS habit, l.logged_date AS date
-        FROM logs l
-        JOIN habits h ON l.habit_id = h.id
-        WHERE h.owner = ?
-        ORDER BY h.name, l.logged_date
-    """, (session["uid"],)).fetchall()
-    conn.close()
+    with db_connection() as conn:
+        rows = conn.execute("""
+            SELECT h.name AS habit, l.logged_date AS date
+            FROM logs l
+            JOIN habits h ON l.habit_id = h.id
+            WHERE h.owner = ?
+            ORDER BY h.name, l.logged_date
+        """, (session["uid"],)).fetchall()
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -484,30 +472,28 @@ def log_habit(habit_id):
     from datetime import date
     owner = session["uid"]
     today = date.today()
-    conn = get_connection()
 
-    owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
-    if not owned:
-        conn.close()
-        return jsonify({"done": False}), 404
+    with db_connection() as conn:
+        owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
+        if not owned:
+            return jsonify({"done": False}), 404
 
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT OR IGNORE INTO logs (habit_id, logged_date) VALUES (?, ?)",
-        (habit_id, today.isoformat())
-    )
-    conn.commit()
-    new_log = cursor.rowcount > 0
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT OR IGNORE INTO logs (habit_id, logged_date) VALUES (?, ?)",
+            (habit_id, today.isoformat())
+        )
+        conn.commit()
+        new_log = cursor.rowcount > 0
 
-    today_weekday = today.weekday()
-    all_habits = conn.execute("SELECT id, repeat_days FROM habits WHERE owner = ?", (owner,)).fetchall()
-    scheduled_ids = {h["id"] for h in all_habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"}
-    logged_today_ids = {row["habit_id"] for row in conn.execute("""
-        SELECT l.habit_id FROM logs l
-        JOIN habits h ON l.habit_id = h.id
-        WHERE l.logged_date = ? AND h.owner = ?
-    """, (today.isoformat(), owner)).fetchall()}
-    conn.close()
+        today_weekday = today.weekday()
+        all_habits = conn.execute("SELECT id, repeat_days FROM habits WHERE owner = ?", (owner,)).fetchall()
+        scheduled_ids = {h["id"] for h in all_habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"}
+        logged_today_ids = {row["habit_id"] for row in conn.execute("""
+            SELECT l.habit_id FROM logs l
+            JOIN habits h ON l.habit_id = h.id
+            WHERE l.logged_date = ? AND h.owner = ?
+        """, (today.isoformat(), owner)).fetchall()}
 
     # Only count/require habits actually scheduled today - a log left over on a
     # habit whose schedule later changed (or one logged directly, bypassing the

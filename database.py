@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import contextmanager
 from datetime import date, timedelta
 
 DB_NAME = "habits.db"
@@ -7,6 +8,16 @@ def get_connection():
     conn = sqlite3.connect(DB_NAME, timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
+
+@contextmanager
+def db_connection():
+    """Like get_connection(), but guarantees the connection is closed even if
+    an exception is raised partway through a multi-query route."""
+    conn = get_connection()
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 def init_db():
     conn = get_connection()
