@@ -63,6 +63,8 @@ db.sqlite3-journal
 
 # Habit tracker
 habits.db
+habits.db-wal
+habits.db-shm
 
 # Flask stuff:
 instance/

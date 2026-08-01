@@ -4,13 +4,19 @@ from datetime import date, timedelta
 DB_NAME = "habits.db"
 
 def get_connection():
-    conn = sqlite3.connect(DB_NAME)
+    conn = sqlite3.connect(DB_NAME, timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
+
+    # WAL mode lets readers and a single writer proceed concurrently instead
+    # of blocking each other, which the default rollback-journal mode doesn't.
+    # This is a database-level setting persisted in the file, so it only needs
+    # setting once here rather than on every connection.
+    cursor.execute("PRAGMA journal_mode=WAL")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS habits (
