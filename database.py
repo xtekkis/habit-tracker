@@ -229,22 +229,13 @@ def get_best_streak(habit_id):
             current = 1
     return best
 
-def get_recent_notes(habit_id, limit=8):
-    conn = get_connection()
-    rows = conn.execute(
-        "SELECT logged_date, notes FROM logs WHERE habit_id = ? AND notes IS NOT NULL AND notes != '' ORDER BY logged_date DESC LIMIT ?",
-        (habit_id, limit)
-    ).fetchall()
-    conn.close()
-    return [{"date": row["logged_date"], "notes": row["notes"]} for row in rows]
-
 def get_habit(habit_id, owner):
     conn = get_connection()
     habit = conn.execute("SELECT * FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
     conn.close()
     return habit
 
-def get_logs_for_month(habit_id, year, month):
+def get_logged_dates_for_month(habit_id, year, month):
     conn = get_connection()
     start = f"{year:04d}-{month:02d}-01"
     if month == 12:
@@ -252,22 +243,11 @@ def get_logs_for_month(habit_id, year, month):
     else:
         end = f"{year:04d}-{month+1:02d}-01"
     rows = conn.execute(
-        "SELECT logged_date, notes FROM logs WHERE habit_id = ? AND logged_date >= ? AND logged_date < ?",
+        "SELECT logged_date FROM logs WHERE habit_id = ? AND logged_date >= ? AND logged_date < ?",
         (habit_id, start, end)
     ).fetchall()
     conn.close()
-    return {row["logged_date"]: row["notes"] for row in rows}
-
-def get_todays_notes(owner):
-    conn = get_connection()
-    today = date.today().isoformat()
-    rows = conn.execute("""
-        SELECT l.habit_id, l.notes FROM logs l
-        JOIN habits h ON l.habit_id = h.id
-        WHERE l.logged_date = ? AND l.notes IS NOT NULL AND l.notes != '' AND h.owner = ?
-    """, (today, owner)).fetchall()
-    conn.close()
-    return {row["habit_id"]: row["notes"] for row in rows}
+    return [row["logged_date"] for row in rows]
 
 def get_categories(owner):
     conn = get_connection()

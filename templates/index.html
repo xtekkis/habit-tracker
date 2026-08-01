@@ -58,9 +58,6 @@
             <div class="progress-bar">
                 <div class="progress-fill" data-color="{{ habit['color'] or '#D96A34' }}" id="bar-{{ habit['id'] }}" data-count="{{ count }}" data-width="{{ (count / 7 * 100) | int }}"></div>
             </div>
-            {% if todays_notes.get(habit["id"]) %}
-            <span class="todays-note">{{ todays_notes[habit["id"]] }}</span>
-            {% endif %}
         </div>
 
         <div class="habit-right">
@@ -587,11 +584,7 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
         var self = this;
         var habitId = this.dataset.habitId;
         self.disabled = true;
-        fetch('/log/' + habitId, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: 'notes='
-        })
+        fetch('/log/' + habitId, { method: 'POST' })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.done) { self.disabled = false; return; }

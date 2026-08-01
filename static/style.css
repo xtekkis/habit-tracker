@@ -723,14 +723,6 @@ button:active {
     display: block;
 }
 
-.todays-note {
-    display: block;
-    font-size: 12px;
-    color: var(--text-faint);
-    margin-top: 3px;
-    font-style: italic;
-}
-
 /* Habit right column */
 
 .habit-right {
@@ -2102,40 +2094,6 @@ html.no-scroll {
     flex-shrink: 0;
 }
 
-/* Calendar notes timeline */
-
-.cal-notes {
-    display: flex;
-    flex-direction: column;
-}
-
-.cal-note-item {
-    display: flex;
-    gap: 14px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-    align-items: baseline;
-}
-
-.cal-note-item:last-child {
-    border-bottom: none;
-}
-
-.cal-note-date {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text-faint);
-    white-space: nowrap;
-    min-width: 40px;
-    flex-shrink: 0;
-}
-
-.cal-note-text {
-    font-size: 14px;
-    color: var(--text-muted);
-    line-height: 1.5;
-}
-
 /* Animations */
 
 @keyframes slideUp {
@@ -2439,8 +2397,7 @@ textarea:focus-visible,
         margin: 0 auto 24px;
     }
 
-    .cal-stats,
-    .cal-notes {
+    .cal-stats {
         max-width: 440px;
         margin-left: auto;
         margin-right: auto;

@@ -4,7 +4,7 @@ import uuid
 from datetime import timedelta
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session
-from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_todays_notes, get_habit, get_logs_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, get_recent_notes, add_xp, get_player_state
+from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state
 
 app = Flask(__name__)
 
@@ -111,7 +111,6 @@ def index():
     streaks = {habit["id"]: get_streak(habit["id"]) for habit in habits}
     weekly_counts = get_weekly_counts(owner, prefs["start_week"])
     categories = get_categories(owner)
-    todays_notes = get_todays_notes(owner)
     pending_reminders = [
         {"name": h["name"], "time": h["reminder_time"]}
         for h in habits
@@ -123,7 +122,6 @@ def index():
         logged_today=logged_today,
         weekly_counts=weekly_counts,
         categories=categories,
-        todays_notes=todays_notes,
         week_days=week_days,
         day_name=day_name,
         day_month=day_month,
@@ -357,7 +355,7 @@ def habit_calendar(habit_id):
     except (ValueError, IndexError):
         year, month = today.year, today.month
 
-    logs = get_logs_for_month(habit_id, year, month)
+    logged_dates = get_logged_dates_for_month(habit_id, year, month)
     weeks = cal_module.monthcalendar(year, month)
     month_name = date(year, month, 1).strftime("%B %Y")
 
@@ -374,16 +372,11 @@ def habit_calendar(habit_id):
     is_current = (year == today.year and month == today.month)
     today_day = today.day if is_current else None
 
-    logged_days = set(int(d.split('-')[2]) for d in logs.keys())
-    month_logged = len(logs)
+    logged_days = set(int(d.split('-')[2]) for d in logged_dates)
+    month_logged = len(logged_dates)
     month_days = today.day if is_current else cal_module.monthrange(year, month)[1]
     streak = get_streak(habit_id)
     best_streak = get_best_streak(habit_id)
-    raw_notes = get_recent_notes(habit_id)
-    recent_notes = [
-        {"date": f"{date.fromisoformat(n['date']).day} {date.fromisoformat(n['date']).strftime('%b')}", "notes": n["notes"]}
-        for n in raw_notes
-    ]
 
     return render_template("calendar.html",
         habit=habit,
@@ -397,7 +390,6 @@ def habit_calendar(habit_id):
         today_day=today_day,
         streak=streak,
         best_streak=best_streak,
-        recent_notes=recent_notes,
         month_logged=month_logged,
         month_days=month_days,
     )
@@ -410,7 +402,7 @@ def export_csv():
 
     conn = get_connection()
     rows = conn.execute("""
-        SELECT h.name AS habit, l.logged_date AS date, l.notes
+        SELECT h.name AS habit, l.logged_date AS date
         FROM logs l
         JOIN habits h ON l.habit_id = h.id
         WHERE h.owner = ?
@@ -420,9 +412,9 @@ def export_csv():
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Habit", "Date", "Notes"])
+    writer.writerow(["Habit", "Date"])
     for row in rows:
-        writer.writerow([row["habit"], row["date"], row["notes"] or ""])
+        writer.writerow([row["habit"], row["date"]])
 
     return Response(
         output.getvalue(),
@@ -442,11 +434,10 @@ def log_habit(habit_id):
         conn.close()
         return jsonify({"done": False}), 404
 
-    notes = request.form.get("notes", "").strip()[:500]
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT OR IGNORE INTO logs (habit_id, logged_date, notes) VALUES (?, ?, ?)",
-        (habit_id, today.isoformat(), notes or None)
+        "INSERT OR IGNORE INTO logs (habit_id, logged_date) VALUES (?, ?)",
+        (habit_id, today.isoformat())
     )
     conn.commit()
     new_log = cursor.rowcount > 0
