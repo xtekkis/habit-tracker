@@ -5,9 +5,24 @@ import uuid
 from datetime import timedelta
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash
+from flask.sessions import SecureCookieSessionInterface
 from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner
 
 app = Flask(__name__)
+
+STATIC_LIKE_PATHS = ("/robots.txt", "/sw.js", "/manifest.json")
+
+class _NoCookieOnStaticSessionInterface(SecureCookieSessionInterface):
+    # Static assets never need identity, so they shouldn't force a Set-Cookie
+    # on every request. Flask's session-saving step runs after all
+    # after_request hooks, so suppressing it has to happen here, at the one
+    # point Flask actually checks before deciding to send the cookie.
+    def should_set_cookie(self, app, session):
+        if request.path.startswith("/static/") or request.path in STATIC_LIKE_PATHS:
+            return False
+        return super().should_set_cookie(app, session)
+
+app.session_interface = _NoCookieOnStaticSessionInterface()
 
 # SECRET_KEY must be set (and kept stable) in the real deployment's environment -
 # it signs each browser's session cookie. If it changes, every existing cookie
@@ -35,9 +50,13 @@ app.config.update(
 
 @app.before_request
 def assign_browser_identity():
-    session.permanent = True
+    # Only assign a uid when one doesn't exist yet; setting session.permanent
+    # unconditionally would mark the session "modified" on every request for
+    # no reason. Static-asset paths are additionally exempted from ever
+    # getting a Set-Cookie at all, via the session interface above.
     if "uid" not in session:
         session["uid"] = uuid.uuid4().hex
+        session.permanent = True
 
 @app.after_request
 def set_security_headers(response):
