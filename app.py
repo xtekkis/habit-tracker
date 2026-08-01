@@ -453,17 +453,22 @@ def log_habit(habit_id):
 
     today_weekday = today.weekday()
     all_habits = conn.execute("SELECT id, repeat_days FROM habits WHERE owner = ?", (owner,)).fetchall()
-    scheduled = [h for h in all_habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"]
-    logged_count = conn.execute("""
-        SELECT COUNT(*) FROM logs l
+    scheduled_ids = {h["id"] for h in all_habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"}
+    logged_today_ids = {row["habit_id"] for row in conn.execute("""
+        SELECT l.habit_id FROM logs l
         JOIN habits h ON l.habit_id = h.id
         WHERE l.logged_date = ? AND h.owner = ?
-    """, (today.isoformat(), owner)).fetchone()[0]
+    """, (today.isoformat(), owner)).fetchall()}
     conn.close()
+
+    # Only count/require habits actually scheduled today - a log left over on a
+    # habit whose schedule later changed (or one logged directly, bypassing the
+    # Today list) must not pad this or let the perfect-day bonus fire early.
+    logged_count = len(logged_today_ids & scheduled_ids)
 
     if new_log:
         add_xp(owner, 10)
-        if scheduled and logged_count >= len(scheduled):
+        if scheduled_ids and scheduled_ids.issubset(logged_today_ids):
             add_xp(owner, 25)
 
     return jsonify({
