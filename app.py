@@ -1,8 +1,11 @@
 import os
 import sqlite3
 import sys
+import time
 import uuid
+from collections import defaultdict
 from datetime import timedelta
+from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash
 from flask.sessions import SecureCookieSessionInterface
@@ -75,6 +78,35 @@ def set_security_headers(response):
         "form-action 'self'"
     )
     return response
+
+# In-memory, per-IP rate limiting for the two creation routes, so a scripted
+# loop can't spam habits/categories forever and fill the disk. Keyed by IP
+# rather than the session uid, since a request that sends no cookie at all
+# just gets a fresh uid every time - IP is the one thing that isn't trivially
+# reset on every request. Resets on app restart; fine for a single-process,
+# low-traffic deploy like this one.
+_rate_limit_hits = defaultdict(list)
+
+def rate_limit(limit=10, window_seconds=600):
+    def decorator(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            key = (request.remote_addr, f.__name__)
+            now = time.time()
+            cutoff = now - window_seconds
+            hits = [t for t in _rate_limit_hits[key] if t >= cutoff]
+            if len(hits) >= limit:
+                _rate_limit_hits[key] = hits
+                error = "Too many requests. Try again in a few minutes."
+                if request.headers.get("X-Requested-With") == "fetch":
+                    return jsonify({"ok": False, "error": error}), 429
+                flash(error, "error")
+                return redirect(url_for("index"))
+            hits.append(now)
+            _rate_limit_hits[key] = hits
+            return f(*args, **kwargs)
+        return wrapped
+    return decorator
 
 PALETTE = ['#D96A34', '#8E9B4B', '#E8A93C', '#DD8FBE', '#C56B4A', '#7C9082', '#B58463', '#5A3A2A']
 
@@ -167,6 +199,7 @@ def index():
     )
 
 @app.route("/add", methods=["POST"])
+@rate_limit()
 def add_habit():
     owner = session["uid"]
     name = request.form.get("name", "").strip()[:100]
@@ -288,6 +321,7 @@ def edit_habit(habit_id):
     return redirect(url_for("index"))
 
 @app.route("/category/add", methods=["POST"])
+@rate_limit()
 def add_category():
     owner = session["uid"]
     name = request.form.get("name", "").strip()[:50]
