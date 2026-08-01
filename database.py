@@ -241,6 +241,12 @@ def get_habit(habit_id, owner):
     conn.close()
     return habit
 
+def category_belongs_to_owner(category_id, owner):
+    conn = get_connection()
+    row = conn.execute("SELECT 1 FROM categories WHERE id = ? AND owner = ?", (category_id, owner)).fetchone()
+    conn.close()
+    return row is not None
+
 def get_logged_dates_for_month(habit_id, year, month):
     conn = get_connection()
     start = f"{year:04d}-{month:02d}-01"

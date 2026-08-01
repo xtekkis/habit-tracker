@@ -5,7 +5,7 @@ import uuid
 from datetime import timedelta
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash
-from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state
+from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner
 
 app = Flask(__name__)
 
@@ -135,6 +135,8 @@ def add_habit():
     owner = session["uid"]
     name = request.form.get("name", "").strip()[:100]
     category_id = request.form.get("category_id") or None
+    if category_id and not category_belongs_to_owner(category_id, owner):
+        category_id = None
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
     reminder_time = request.form.get("reminder_time") or None
     icon = request.form.get("icon") or "check"
@@ -234,6 +236,8 @@ def edit_habit(habit_id):
     owner = session["uid"]
     name = request.form.get("name", "").strip()[:100]
     category_id = request.form.get("category_id") or None
+    if category_id and not category_belongs_to_owner(category_id, owner):
+        category_id = None
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
     reminder_time = request.form.get("reminder_time") or None
     icon = request.form.get("icon") or "check"
