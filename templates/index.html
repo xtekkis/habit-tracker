@@ -372,7 +372,10 @@ document.getElementById('categorySheetForm').addEventListener('submit', function
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-        if (!data.ok) return;
+        if (!data.ok) {
+            showToast(data.error || 'Something went wrong.', true);
+            return;
+        }
         if (categorySheetOrigin === 'edit') {
             addCategoryPillTo('editCatPills', 'editCatInput', data.id, data.name);
         } else {
@@ -380,6 +383,9 @@ document.getElementById('categorySheetForm').addEventListener('submit', function
         }
         input.value = '';
         closeSheet('categorySheet');
+    })
+    .catch(function() {
+        showToast('Something went wrong. Check your connection and try again.', true);
     });
 });
 
@@ -587,7 +593,11 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
         fetch('/log/' + habitId, { method: 'POST' })
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (!data.done) { self.disabled = false; return; }
+            if (!data.done) {
+                self.disabled = false;
+                showToast('Could not log that habit. Try reloading the page.', true);
+                return;
+            }
 
             // Button → done state
             self.classList.add('check-done');
@@ -631,7 +641,10 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
                 if (xpRank) xpRank.textContent = p.rank;
             }
         })
-        .catch(function() { self.disabled = false; });
+        .catch(function() {
+            self.disabled = false;
+            showToast('Something went wrong. Check your connection and try again.', true);
+        });
     });
 });
 

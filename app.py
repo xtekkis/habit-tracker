@@ -1,9 +1,10 @@
 import os
+import sqlite3
 import sys
 import uuid
 from datetime import timedelta
 
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash
 from database import init_db, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state
 
 app = Flask(__name__)
@@ -148,8 +149,8 @@ def add_habit():
                 (name, category_id, repeat_days, reminder_time, icon, color, owner)
             )
             conn.commit()
-        except Exception:
-            pass
+        except sqlite3.IntegrityError:
+            flash(f'A habit named "{name}" already exists.', 'error')
     conn.close()
     return redirect(url_for("index"))
 
@@ -245,8 +246,8 @@ def edit_habit(habit_id):
                 (name, category_id, repeat_days, reminder_time, icon, color, habit_id, owner)
             )
             conn.commit()
-        except Exception:
-            pass
+        except sqlite3.IntegrityError:
+            flash(f'A habit named "{name}" already exists.', 'error')
         conn.close()
     return redirect(url_for("index"))
 
@@ -257,15 +258,23 @@ def add_category():
     is_fetch = request.headers.get("X-Requested-With") == "fetch"
 
     if not name:
-        return (jsonify({"ok": False}), 400) if is_fetch else redirect(url_for("index"))
+        error = "Category name is required."
+        if is_fetch:
+            return jsonify({"ok": False, "error": error}), 400
+        flash(error, "error")
+        return redirect(url_for("index"))
 
     conn = get_connection()
     try:
         conn.execute("INSERT INTO categories (name, owner) VALUES (?, ?)", (name, owner))
         conn.commit()
-    except Exception:
+    except sqlite3.IntegrityError:
         conn.close()
-        return (jsonify({"ok": False}), 400) if is_fetch else redirect(url_for("index"))
+        error = f'A category named "{name}" already exists.'
+        if is_fetch:
+            return jsonify({"ok": False, "error": error}), 400
+        flash(error, "error")
+        return redirect(url_for("index"))
 
     if is_fetch:
         cat = conn.execute(

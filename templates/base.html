@@ -23,6 +23,15 @@
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 </head>
 <body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="toast-stack" id="toastStack" role="status" aria-live="polite">
+        {% for category, message in messages %}
+        <div class="toast toast-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
     <div class="app-shell">
         <header class="top-bar">
             {% block top_bar_content %}
@@ -79,6 +88,25 @@
         document.querySelectorAll('[data-pct]').forEach(function(el) {
             el.style.width = el.dataset.pct + '%';
         });
+
+        // Global toast helper - used for client-side (fetch) failures. Server-side
+        // failures render into the same .toast-stack markup via Flask's flash().
+        function showToast(message, isError) {
+            var stack = document.getElementById('toastStack');
+            if (!stack) {
+                stack = document.createElement('div');
+                stack.id = 'toastStack';
+                stack.className = 'toast-stack';
+                stack.setAttribute('role', 'status');
+                stack.setAttribute('aria-live', 'polite');
+                document.body.insertBefore(stack, document.body.firstChild);
+            }
+            var toast = document.createElement('div');
+            toast.className = 'toast' + (isError ? ' toast-error' : '');
+            toast.textContent = message;
+            stack.appendChild(toast);
+            setTimeout(function() { toast.remove(); }, 4000);
+        }
 
         // Global sheet helpers (used by index, settings, and any page with sheets)
         var sheetLastFocused = {};
