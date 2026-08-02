@@ -161,14 +161,33 @@
                                         // browser's own edge-swipe back/forward
             var touchStartX = 0;
             var touchStartY = 0;
+            // True only while tracking a genuine single-finger gesture from
+            // its start. A second finger joining at any point (pinch-zoom,
+            // two-finger scroll) invalidates it, so touchend can't compute a
+            // delta against a stale start position left over from an earlier
+            // gesture.
+            var swipeValid = false;
 
             document.addEventListener('touchstart', function(e) {
-                if (e.touches.length !== 1) return;
+                if (e.touches.length !== 1) {
+                    swipeValid = false;
+                    return;
+                }
                 touchStartX = e.touches[0].clientX;
                 touchStartY = e.touches[0].clientY;
+                swipeValid = true;
+            }, { passive: true });
+
+            document.addEventListener('touchmove', function(e) {
+                if (e.touches.length !== 1) {
+                    swipeValid = false;
+                }
             }, { passive: true });
 
             document.addEventListener('touchend', function(e) {
+                if (!swipeValid) return;
+                swipeValid = false;
+
                 if (touchStartX < EDGE_EXCLUDE || touchStartX > window.innerWidth - EDGE_EXCLUDE) return;
                 if (document.querySelector('.sheet-overlay.active, .modal-overlay.active')) return;
 
