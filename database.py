@@ -340,22 +340,34 @@ def get_player_state(owner):
     }
 
 def add_xp(owner, amount):
+    # BEGIN IMMEDIATE acquires the write lock up front, so a second concurrent
+    # call blocks until the first commits instead of both reading the same
+    # stale xp/level and one overwriting the other's contribution (a lost
+    # update - confirmed to lose the vast majority of awarded XP under
+    # concurrent /log requests without this).
     conn = get_connection()
-    row = conn.execute("SELECT xp, level FROM player_state WHERE owner = ?", (owner,)).fetchone()
-    xp = (row["xp"] if row else 0) + amount
-    level = row["level"] if row else 1
-    needed = xp_for_level(level)
-    while xp >= needed:
-        xp -= needed
-        level += 1
+    conn.isolation_level = None
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT xp, level FROM player_state WHERE owner = ?", (owner,)).fetchone()
+        xp = (row["xp"] if row else 0) + amount
+        level = row["level"] if row else 1
         needed = xp_for_level(level)
-    conn.execute(
-        "INSERT INTO player_state (owner, xp, level) VALUES (?, ?, ?) "
-        "ON CONFLICT(owner) DO UPDATE SET xp = excluded.xp, level = excluded.level",
-        (owner, xp, level)
-    )
-    conn.commit()
-    conn.close()
+        while xp >= needed:
+            xp -= needed
+            level += 1
+            needed = xp_for_level(level)
+        conn.execute(
+            "INSERT INTO player_state (owner, xp, level) VALUES (?, ?, ?) "
+            "ON CONFLICT(owner) DO UPDATE SET xp = excluded.xp, level = excluded.level",
+            (owner, xp, level)
+        )
+        conn.execute("COMMIT")
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+    finally:
+        conn.close()
 
 def get_streak(habit_id):
     conn = get_connection()
