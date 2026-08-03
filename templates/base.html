@@ -74,6 +74,19 @@
         </nav>
     </div>
     <script>
+        // The server runs in UTC, which usually isn't the visitor's own
+        // timezone, so "today" for day-boundary purposes (streaks, which
+        // habits are due, what gets logged) needs the browser's local date.
+        // Refreshed on every page load; get_local_today() in app.py falls
+        // back to the server's UTC date if this cookie is missing or stale.
+        function getLocalDateString() {
+            var d = new Date();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return d.getFullYear() + '-' + m + '-' + day;
+        }
+        document.cookie = 'local_date=' + getLocalDateString() + '; path=/; max-age=86400; samesite=lax';
+
         lucide.createIcons();
 
         if ('serviceWorker' in navigator) {

@@ -283,9 +283,9 @@ def get_categories(owner):
     conn.close()
     return cats
 
-def get_weekly_counts(owner, start_week="monday"):
+def get_weekly_counts(owner, start_week="monday", today=None):
     conn = get_connection()
-    today = date.today()
+    today = today or date.today()
     week_start = get_week_start(today, start_week)
     rows = conn.execute("""
         SELECT l.habit_id, COUNT(*) as count FROM logs l
@@ -374,7 +374,7 @@ def add_xp(owner, amount):
     finally:
         conn.close()
 
-def get_streak(habit_id, repeat_days):
+def get_streak(habit_id, repeat_days, today=None):
     conn = get_connection()
     rows = conn.execute(
         "SELECT logged_date FROM logs WHERE habit_id = ? ORDER BY logged_date DESC",
@@ -387,7 +387,7 @@ def get_streak(habit_id, repeat_days):
 
     dates = set(date.fromisoformat(row["logged_date"]) for row in rows)
     repeat_days = repeat_days or "1111111"
-    today = date.today()
+    today = today or date.today()
     streak = 0
     check = today
     # Bounded to a decade back: a habit scheduled on zero days (shouldn't

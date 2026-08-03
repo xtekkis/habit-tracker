@@ -108,6 +108,27 @@ def rate_limit(limit=10, window_seconds=600):
         return wrapped
     return decorator
 
+def get_local_today():
+    # The server (PythonAnywhere) runs in UTC, which isn't the visitor's
+    # timezone - base.html sets a `local_date` cookie from the browser's
+    # clock on every page load, and the check-off fetch sends a fresh one
+    # as a query param so it can't go stale if the tab's been open a while.
+    # Real-world timezones only span UTC-12..UTC+14, so a genuine local date
+    # can never be more than 1 day off the server's UTC date - anything
+    # further out is untrusted client input, not a real timezone, so it's
+    # rejected in favor of the server's own date rather than trusted blindly.
+    from datetime import date
+    server_today = date.today()
+    raw = request.args.get("local_date") or request.cookies.get("local_date")
+    if raw:
+        try:
+            candidate = date.fromisoformat(raw)
+        except ValueError:
+            return server_today
+        if abs((candidate - server_today).days) <= 1:
+            return candidate
+    return server_today
+
 PALETTE = ['#D96A34', '#8E9B4B', '#E8A93C', '#DD8FBE', '#C56B4A', '#7C9082', '#B58463', '#5A3A2A']
 
 @app.context_processor
@@ -138,8 +159,8 @@ def service_worker():
 
 @app.route("/")
 def index():
-    from datetime import date, timedelta
-    today_date = date.today()
+    from datetime import timedelta
+    today_date = get_local_today()
     today = today_date.isoformat()
     owner = session["uid"]
 
@@ -177,8 +198,8 @@ def index():
     day_name = today_date.strftime("%A")
     day_month = f"{today_date.day} {today_date.strftime('%B')}"
 
-    streaks = {habit["id"]: get_streak(habit["id"], habit["repeat_days"]) for habit in habits}
-    weekly_counts = get_weekly_counts(owner, prefs["start_week"])
+    streaks = {habit["id"]: get_streak(habit["id"], habit["repeat_days"], today_date) for habit in habits}
+    weekly_counts = get_weekly_counts(owner, prefs["start_week"], today_date)
     categories = get_categories(owner)
     pending_reminders = [
         {"name": h["name"], "time": h["reminder_time"]}
@@ -247,9 +268,8 @@ def monthly_summary():
 
 @app.route("/weekly")
 def weekly_summary():
-    from datetime import date
     owner = session["uid"]
-    today = date.today()
+    today = get_local_today()
     prefs = get_preferences(owner)
     week_start = get_week_start(today, prefs["start_week"])
     month_start = today.replace(day=1)
@@ -277,7 +297,7 @@ def weekly_summary():
                 'month_pct': int(month_count / today.day * 100),
             })
 
-    streaks = [get_streak(h['id'], h['repeat_days']) for h in habits]
+    streaks = [get_streak(h['id'], h['repeat_days'], today) for h in habits]
     best_streak = max(streaks) if streaks else 0
 
     week_total = sum(h['week_count'] for h in habit_data)
@@ -426,7 +446,7 @@ def habit_calendar(habit_id):
     if not habit:
         return redirect(url_for("index"))
 
-    today = date.today()
+    today = get_local_today()
     month_param = request.args.get("month", f"{today.year:04d}-{today.month:02d}")
     try:
         year, month = int(month_param[:4]), int(month_param[5:7])
@@ -455,7 +475,7 @@ def habit_calendar(habit_id):
     logged_days = set(int(d.split('-')[2]) for d in logged_dates)
     month_logged = len(logged_dates)
     month_days = today.day if is_current else cal_module.monthrange(year, month)[1]
-    streak = get_streak(habit_id, habit["repeat_days"])
+    streak = get_streak(habit_id, habit["repeat_days"], today)
     best_streak = get_best_streak(habit_id, habit["repeat_days"])
 
     return render_template("calendar.html",
@@ -510,9 +530,8 @@ def export_csv():
 
 @app.route("/log/<int:habit_id>", methods=["POST"])
 def log_habit(habit_id):
-    from datetime import date
     owner = session["uid"]
-    today = date.today()
+    today = get_local_today()
 
     with db_connection() as conn:
         owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()

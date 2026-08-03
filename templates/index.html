@@ -606,7 +606,7 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
         var self = this;
         var habitId = this.dataset.habitId;
         self.disabled = true;
-        fetch('/log/' + habitId, { method: 'POST' })
+        fetch('/log/' + habitId + '?local_date=' + encodeURIComponent(getLocalDateString()), { method: 'POST' })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.done) {
