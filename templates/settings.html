@@ -80,12 +80,10 @@
             {% for cat in categories %}
             <div class="cat-mgmt-item">
                 <span class="cat-mgmt-name">{{ cat['name'] }}</span>
-                <form action="/category/delete/{{ cat['id'] }}" method="POST" class="form-contents">
-                    <input type="hidden" name="next" value="/settings">
-                    <button type="submit" class="cat-mgmt-delete" title="Delete" aria-label="Delete {{ cat['name'] }}">
-                        <i data-lucide="trash-2" aria-hidden="true"></i>
-                    </button>
-                </form>
+                <button type="button" class="cat-mgmt-delete open-delete-category" title="Delete"
+                        aria-label="Delete {{ cat['name'] }}" data-id="{{ cat['id'] }}" data-name="{{ cat['name'] }}">
+                    <i data-lucide="trash-2" aria-hidden="true"></i>
+                </button>
             </div>
             {% endfor %}
         </div>
@@ -105,6 +103,21 @@
                 <button type="submit" class="btn-danger">Reset everything</button>
             </form>
             <button type="button" class="btn-cancel" id="closeResetModal">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete category confirmation modal -->
+<div class="modal-overlay" id="deleteCategoryModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="deleteCategoryModalTitle" tabindex="-1">
+        <h3 id="deleteCategoryModalTitle">Delete category</h3>
+        <p class="modal-body-text">Delete "<span id="deleteCategoryName"></span>"? Habits using it will become uncategorized. This can't be undone.</p>
+        <div class="modal-actions">
+            <form id="deleteCategoryConfirmForm" method="POST" class="form-contents">
+                <input type="hidden" name="next" value="/settings">
+                <button type="submit" class="btn-danger">Delete</button>
+            </form>
+            <button type="button" class="btn-cancel" id="closeDeleteCategoryModal">Cancel</button>
         </div>
     </div>
 </div>
@@ -146,11 +159,41 @@ document.getElementById('resetModal').addEventListener('click', function(e) {
     if (e.target === this) closeResetModal();
 });
 
+var deleteCategoryModalLastFocused = null;
+
+document.querySelectorAll('.open-delete-category').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        deleteCategoryModalLastFocused = document.activeElement;
+        document.getElementById('deleteCategoryName').textContent = this.dataset.name;
+        document.getElementById('deleteCategoryConfirmForm').action = '/category/delete/' + this.dataset.id;
+        document.getElementById('deleteCategoryModal').classList.add('active');
+        setTimeout(function() {
+            document.querySelector('#deleteCategoryModal .modal').focus();
+        }, 50);
+    });
+});
+
+function closeDeleteCategoryModal() {
+    document.getElementById('deleteCategoryModal').classList.remove('active');
+    if (deleteCategoryModalLastFocused) {
+        deleteCategoryModalLastFocused.focus();
+        deleteCategoryModalLastFocused = null;
+    }
+}
+
+document.getElementById('closeDeleteCategoryModal').addEventListener('click', closeDeleteCategoryModal);
+document.getElementById('deleteCategoryModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteCategoryModal();
+});
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         document.querySelectorAll('.sheet-overlay.active').forEach(function(o) { closeSheet(o.id); });
         if (document.getElementById('resetModal').classList.contains('active')) {
             closeResetModal();
+        }
+        if (document.getElementById('deleteCategoryModal').classList.contains('active')) {
+            closeDeleteCategoryModal();
         }
     }
 });
