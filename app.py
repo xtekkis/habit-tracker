@@ -207,6 +207,11 @@ def add_habit():
     if category_id and not category_belongs_to_owner(category_id, owner):
         category_id = None
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
+    if repeat_days == '0000000':
+        # Client-side validation should already prevent this, but a habit
+        # scheduled on zero days would never appear on Today and could never
+        # be checked off - default to every day rather than accept that.
+        repeat_days = '1111111'
     reminder_time = request.form.get("reminder_time") or None
     icon = request.form.get("icon") or "check"
     with db_connection() as conn:
@@ -305,6 +310,8 @@ def edit_habit(habit_id):
     if category_id and not category_belongs_to_owner(category_id, owner):
         category_id = None
     repeat_days = ''.join('1' if request.form.get(f'day_{i}') else '0' for i in range(7))
+    if repeat_days == '0000000':
+        repeat_days = '1111111'
     reminder_time = request.form.get("reminder_time") or None
     icon = request.form.get("icon") or "check"
     color = request.form.get("color") or "#D96A34"

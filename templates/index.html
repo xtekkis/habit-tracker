@@ -125,7 +125,7 @@
                 <i data-lucide="x" aria-hidden="true"></i>
             </button>
         </div>
-        <form action="/add" method="POST">
+        <form action="/add" method="POST" id="addSheetForm">
             <label class="field-label">Name</label>
             <input type="text" name="name" placeholder="e.g. Read for 20 minutes..." required maxlength="100">
 
@@ -146,7 +146,7 @@
             </div>
 
             <label class="field-label">Repeat</label>
-            <div class="day-picker">
+            <div class="day-picker" id="addDayPicker">
                 {% for i in range(7) %}
                 <label class="day-btn">
                     <input type="checkbox" class="day-checkbox" name="day_{{ i }}" checked>
@@ -565,6 +565,22 @@ function setupReminderToggle(toggleId, timeWrapId, timeInputId) {
 }
 setupReminderToggle('addReminderToggle', 'addReminderTimeWrap', 'addReminderTime');
 setupReminderToggle('editReminderToggle', 'editReminderTimeWrap', 'editReminderTime');
+
+// Require at least one repeat day, so a habit can't be created in a state
+// where it never appears on Today and can never be checked off.
+function requireOneDayChecked(formId, pickerId) {
+    var form = document.getElementById(formId);
+    var picker = document.getElementById(pickerId);
+    if (!form || !picker) return;
+    form.addEventListener('submit', function(e) {
+        if (picker.querySelectorAll('.day-checkbox:checked').length === 0) {
+            e.preventDefault();
+            showToast('Pick at least one day for this habit to repeat on.', true);
+        }
+    });
+}
+requireOneDayChecked('addSheetForm', 'addDayPicker');
+requireOneDayChecked('editSheetForm', 'editDayPicker');
 
 // Reminder scheduling — fire notifications for habits not yet logged today
 var pendingReminders = JSON.parse(document.getElementById('reminder-data').textContent);
