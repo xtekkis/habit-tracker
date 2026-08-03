@@ -177,7 +177,7 @@ def index():
     day_name = today_date.strftime("%A")
     day_month = f"{today_date.day} {today_date.strftime('%B')}"
 
-    streaks = {habit["id"]: get_streak(habit["id"]) for habit in habits}
+    streaks = {habit["id"]: get_streak(habit["id"], habit["repeat_days"]) for habit in habits}
     weekly_counts = get_weekly_counts(owner, prefs["start_week"])
     categories = get_categories(owner)
     pending_reminders = [
@@ -256,7 +256,7 @@ def weekly_summary():
     days_elapsed_this_week = (today - week_start).days + 1
 
     with db_connection() as conn:
-        habits = conn.execute("SELECT id, name, category_id, color FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
+        habits = conn.execute("SELECT id, name, category_id, color, repeat_days FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
 
         habit_data = []
         for habit in habits:
@@ -277,7 +277,7 @@ def weekly_summary():
                 'month_pct': int(month_count / today.day * 100),
             })
 
-    streaks = [get_streak(h['id']) for h in habits]
+    streaks = [get_streak(h['id'], h['repeat_days']) for h in habits]
     best_streak = max(streaks) if streaks else 0
 
     week_total = sum(h['week_count'] for h in habit_data)
@@ -455,8 +455,8 @@ def habit_calendar(habit_id):
     logged_days = set(int(d.split('-')[2]) for d in logged_dates)
     month_logged = len(logged_dates)
     month_days = today.day if is_current else cal_module.monthrange(year, month)[1]
-    streak = get_streak(habit_id)
-    best_streak = get_best_streak(habit_id)
+    streak = get_streak(habit_id, habit["repeat_days"])
+    best_streak = get_best_streak(habit_id, habit["repeat_days"])
 
     return render_template("calendar.html",
         habit=habit,

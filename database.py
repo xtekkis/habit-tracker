@@ -225,7 +225,7 @@ def count_perfect_days(start, end, habit_count, owner):
     conn.close()
     return result
 
-def get_best_streak(habit_id):
+def get_best_streak(habit_id, repeat_days):
     conn = get_connection()
     rows = conn.execute(
         "SELECT logged_date FROM logs WHERE habit_id = ? ORDER BY logged_date ASC",
@@ -236,14 +236,19 @@ def get_best_streak(habit_id):
     if not rows:
         return 0
 
-    dates = sorted(date.fromisoformat(row["logged_date"]) for row in rows)
-    best = current = 1
-    for i in range(1, len(dates)):
-        if (dates[i] - dates[i - 1]).days == 1:
-            current += 1
-            best = max(best, current)
-        elif (dates[i] - dates[i - 1]).days > 1:
-            current = 1
+    dates = set(date.fromisoformat(row["logged_date"]) for row in rows)
+    repeat_days = repeat_days or "1111111"
+    day = min(dates)
+    end = max(dates)
+    best = current = 0
+    while day <= end:
+        if repeat_days[day.weekday()] == "1":
+            if day in dates:
+                current += 1
+                best = max(best, current)
+            else:
+                current = 0
+        day += timedelta(days=1)
     return best
 
 def get_habit(habit_id, owner):
@@ -369,7 +374,7 @@ def add_xp(owner, amount):
     finally:
         conn.close()
 
-def get_streak(habit_id):
+def get_streak(habit_id, repeat_days):
     conn = get_connection()
     rows = conn.execute(
         "SELECT logged_date FROM logs WHERE habit_id = ? ORDER BY logged_date DESC",
@@ -381,15 +386,21 @@ def get_streak(habit_id):
         return 0
 
     dates = set(date.fromisoformat(row["logged_date"]) for row in rows)
+    repeat_days = repeat_days or "1111111"
     today = date.today()
-    check = today if today in dates else today - timedelta(days=1)
-
-    if check not in dates:
-        return 0
-
     streak = 0
-    while check in dates:
-        streak += 1
+    check = today
+    # Bounded to a decade back: a habit scheduled on zero days (shouldn't
+    # happen post-fix, but legacy rows could exist) would otherwise never
+    # hit the "scheduled but not logged" break below and loop forever.
+    for _ in range(3660):
+        if repeat_days[check.weekday()] == "1":
+            if check in dates:
+                streak += 1
+            elif check == today:
+                pass  # today isn't over yet - a miss so far doesn't break the streak
+            else:
+                break
         check -= timedelta(days=1)
 
     return streak
