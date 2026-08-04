@@ -884,20 +884,6 @@ button:active {
     color: var(--danger);
 }
 
-/* Empty state */
-
-.empty {
-    color: var(--text-muted);
-    font-size: 14px;
-    padding: 32px 0;
-    text-align: center;
-}
-
-.empty a {
-    color: var(--primary);
-    text-decoration: none;
-}
-
 /* Modal */
 
 .modal-overlay {
@@ -959,47 +945,6 @@ button:active {
     display: flex;
     gap: 10px;
 }
-
-/* Tables (weekly / monthly) */
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--surface);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-}
-
-thead th {
-    text-align: left;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-faint);
-    padding: 14px 16px 12px;
-    border-bottom: 1px solid var(--border);
-}
-
-tbody tr {
-    border-top: 1px solid var(--border);
-}
-
-tbody tr:first-child {
-    border-top: none;
-}
-
-tbody tr:nth-child(even) {
-    background: var(--surface-2);
-}
-
-tbody td {
-    padding: 14px 16px;
-    font-size: 14px;
-    color: var(--text);
-}
-
 
 /* Insights */
 

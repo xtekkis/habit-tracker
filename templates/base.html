@@ -151,7 +151,7 @@
             var path = window.location.pathname;
             if (path === '/') {
                 document.getElementById('tab-today').classList.add('active');
-            } else if (path.startsWith('/weekly') || path.startsWith('/monthly')) {
+            } else if (path.startsWith('/weekly')) {
                 document.getElementById('tab-insights').classList.add('active');
             } else if (path === '/calendar' || (path.startsWith('/habit/') && path.endsWith('/calendar'))) {
                 document.getElementById('tab-calendar').classList.add('active');

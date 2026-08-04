@@ -302,23 +302,6 @@ def get_weekly_counts(owner, start_week="monday", today=None, conn=None):
         conn.close()
     return {row["habit_id"]: row["count"] for row in rows}
 
-def get_monthly_summary(owner):
-    conn = get_connection()
-    today = date.today()
-    month_start = today.replace(day=1)
-    days_in_month = (today - month_start).days + 1
-
-    habits = conn.execute("SELECT * FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
-    summary = []
-    for habit in habits:
-        count = conn.execute(
-            "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
-            (habit["id"], month_start.isoformat(), today.isoformat())
-        ).fetchone()[0]
-        summary.append({"name": habit["name"], "count": count, "out_of": days_in_month})
-    conn.close()
-    return summary
-
 def xp_for_level(level):
     return 100 + (level - 1) * 50
 

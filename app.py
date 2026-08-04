@@ -9,7 +9,7 @@ from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash, g
 from flask.sessions import SecureCookieSessionInterface
-from database import init_db, db_connection, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner
+from database import init_db, db_connection, get_connection, get_streak, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner
 
 app = Flask(__name__)
 
@@ -276,11 +276,6 @@ def delete_habit(habit_id):
             conn.execute("DELETE FROM logs WHERE habit_id = ?", (habit_id,))
             conn.commit()
     return redirect(url_for("index"))
-
-@app.route("/monthly")
-def monthly_summary():
-    summary = get_monthly_summary(session["uid"])
-    return render_template("monthly.html", summary=summary)
 
 @app.route("/weekly")
 def weekly_summary():
