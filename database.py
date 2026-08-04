@@ -185,10 +185,12 @@ def init_db():
     conn.commit()
     conn.close()
 
-def get_preferences(owner):
-    conn = get_connection()
+def get_preferences(owner, conn=None):
+    owns_conn = conn is None
+    conn = conn or get_connection()
     rows = conn.execute("SELECT key, value FROM preferences WHERE owner = ?", (owner,)).fetchall()
-    conn.close()
+    if owns_conn:
+        conn.close()
     prefs = {row["key"]: row["value"] for row in rows}
     prefs.setdefault("show_streaks", "1")
     prefs.setdefault("start_week", "monday")
@@ -277,14 +279,17 @@ def get_logged_dates_for_month(habit_id, year, month):
     conn.close()
     return [row["logged_date"] for row in rows]
 
-def get_categories(owner):
-    conn = get_connection()
+def get_categories(owner, conn=None):
+    owns_conn = conn is None
+    conn = conn or get_connection()
     cats = conn.execute("SELECT * FROM categories WHERE owner = ? ORDER BY name", (owner,)).fetchall()
-    conn.close()
+    if owns_conn:
+        conn.close()
     return cats
 
-def get_weekly_counts(owner, start_week="monday", today=None):
-    conn = get_connection()
+def get_weekly_counts(owner, start_week="monday", today=None, conn=None):
+    owns_conn = conn is None
+    conn = conn or get_connection()
     today = today or date.today()
     week_start = get_week_start(today, start_week)
     rows = conn.execute("""
@@ -293,7 +298,8 @@ def get_weekly_counts(owner, start_week="monday", today=None):
         WHERE l.logged_date BETWEEN ? AND ? AND h.owner = ?
         GROUP BY l.habit_id
     """, (week_start.isoformat(), today.isoformat(), owner)).fetchall()
-    conn.close()
+    if owns_conn:
+        conn.close()
     return {row["habit_id"]: row["count"] for row in rows}
 
 def get_monthly_summary(owner):
@@ -329,10 +335,12 @@ def rank_for_level(level):
     if level >= 11:  return "Sprout"
     return "Seed"
 
-def get_player_state(owner):
-    conn = get_connection()
+def get_player_state(owner, conn=None):
+    owns_conn = conn is None
+    conn = conn or get_connection()
     row = conn.execute("SELECT xp, level FROM player_state WHERE owner = ?", (owner,)).fetchone()
-    conn.close()
+    if owns_conn:
+        conn.close()
     level = row["level"] if row else 1
     xp = row["xp"] if row else 0
     needed = xp_for_level(level)
@@ -374,13 +382,15 @@ def add_xp(owner, amount):
     finally:
         conn.close()
 
-def get_streak(habit_id, repeat_days, today=None):
-    conn = get_connection()
+def get_streak(habit_id, repeat_days, today=None, conn=None):
+    owns_conn = conn is None
+    conn = conn or get_connection()
     rows = conn.execute(
         "SELECT logged_date FROM logs WHERE habit_id = ? ORDER BY logged_date DESC",
         (habit_id,)
     ).fetchall()
-    conn.close()
+    if owns_conn:
+        conn.close()
 
     if not rows:
         return 0

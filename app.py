@@ -7,9 +7,9 @@ from collections import defaultdict
 from datetime import timedelta
 from functools import wraps
 
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash, g
 from flask.sessions import SecureCookieSessionInterface
-from database import init_db, db_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner
+from database import init_db, db_connection, get_connection, get_streak, get_monthly_summary, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner
 
 app = Flask(__name__)
 
@@ -108,6 +108,22 @@ def rate_limit(limit=10, window_seconds=600):
         return wrapped
     return decorator
 
+def get_request_conn():
+    # Reuse one SQLite connection for the whole request instead of opening a
+    # fresh one for every helper call - a single Today render with 8 habits
+    # was opening 13 separate connections (one per streak, plus
+    # prefs/categories/player-state). Closed in _close_request_conn below,
+    # which Flask guarantees runs even if the view raises.
+    if "db_conn" not in g:
+        g.db_conn = get_connection()
+    return g.db_conn
+
+@app.teardown_appcontext
+def _close_request_conn(exception=None):
+    conn = g.pop("db_conn", None)
+    if conn is not None:
+        conn.close()
+
 def get_local_today():
     # The server (PythonAnywhere) runs in UTC, which isn't the visitor's
     # timezone - base.html sets a `local_date` cookie from the browser's
@@ -133,7 +149,7 @@ PALETTE = ['#D96A34', '#8E9B4B', '#E8A93C', '#DD8FBE', '#C56B4A', '#7C9082', '#B
 
 @app.context_processor
 def inject_player():
-    return {"player": get_player_state(session["uid"])}
+    return {"player": get_player_state(session["uid"], get_request_conn())}
 
 @app.errorhandler(404)
 def not_found(e):
@@ -164,26 +180,26 @@ def index():
     today = today_date.isoformat()
     owner = session["uid"]
 
-    with db_connection() as conn:
-        habits = conn.execute("""
-            SELECT h.*, c.name as category_name
-            FROM habits h
-            LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
-            WHERE h.owner = ?
-            ORDER BY h.created_at DESC
-        """, (owner,)).fetchall()
-        logged_today = set(
-            row["habit_id"] for row in conn.execute("""
-                SELECT l.habit_id FROM logs l
-                JOIN habits h ON l.habit_id = h.id
-                WHERE l.logged_date = ? AND h.owner = ?
-            """, (today, owner)).fetchall()
-        )
+    conn = get_request_conn()
+    habits = conn.execute("""
+        SELECT h.*, c.name as category_name
+        FROM habits h
+        LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
+        WHERE h.owner = ?
+        ORDER BY h.created_at DESC
+    """, (owner,)).fetchall()
+    logged_today = set(
+        row["habit_id"] for row in conn.execute("""
+            SELECT l.habit_id FROM logs l
+            JOIN habits h ON l.habit_id = h.id
+            WHERE l.logged_date = ? AND h.owner = ?
+        """, (today, owner)).fetchall()
+    )
 
     today_weekday = today_date.weekday()  # Mon=0..Sun=6
     habits = [h for h in habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"]
 
-    prefs = get_preferences(owner)
+    prefs = get_preferences(owner, conn)
     week_start = get_week_start(today_date, prefs["start_week"])
     letters = ['M','T','W','T','F','S','S']  # indexed by Python weekday: Mon=0..Sun=6
     week_days = [
@@ -198,9 +214,9 @@ def index():
     day_name = today_date.strftime("%A")
     day_month = f"{today_date.day} {today_date.strftime('%B')}"
 
-    streaks = {habit["id"]: get_streak(habit["id"], habit["repeat_days"], today_date) for habit in habits}
-    weekly_counts = get_weekly_counts(owner, prefs["start_week"], today_date)
-    categories = get_categories(owner)
+    streaks = {habit["id"]: get_streak(habit["id"], habit["repeat_days"], today_date, conn) for habit in habits}
+    weekly_counts = get_weekly_counts(owner, prefs["start_week"], today_date, conn)
+    categories = get_categories(owner, conn)
     pending_reminders = [
         {"name": h["name"], "time": h["reminder_time"]}
         for h in habits
@@ -270,34 +286,34 @@ def monthly_summary():
 def weekly_summary():
     owner = session["uid"]
     today = get_local_today()
-    prefs = get_preferences(owner)
+    conn = get_request_conn()
+    prefs = get_preferences(owner, conn)
     week_start = get_week_start(today, prefs["start_week"])
     month_start = today.replace(day=1)
     days_elapsed_this_week = (today - week_start).days + 1
 
-    with db_connection() as conn:
-        habits = conn.execute("SELECT id, name, category_id, color, repeat_days FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
+    habits = conn.execute("SELECT id, name, category_id, color, repeat_days FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
 
-        habit_data = []
-        for habit in habits:
-            week_count = conn.execute(
-                "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
-                (habit['id'], week_start.isoformat(), today.isoformat())
-            ).fetchone()[0]
-            month_count = conn.execute(
-                "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
-                (habit['id'], month_start.isoformat(), today.isoformat())
-            ).fetchone()[0]
-            habit_data.append({
-                'name': habit['name'],
-                'color': habit['color'] or '#D96A34',
-                'week_count': week_count,
-                'week_pct': int(week_count / days_elapsed_this_week * 100),
-                'month_count': month_count,
-                'month_pct': int(month_count / today.day * 100),
-            })
+    habit_data = []
+    for habit in habits:
+        week_count = conn.execute(
+            "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
+            (habit['id'], week_start.isoformat(), today.isoformat())
+        ).fetchone()[0]
+        month_count = conn.execute(
+            "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
+            (habit['id'], month_start.isoformat(), today.isoformat())
+        ).fetchone()[0]
+        habit_data.append({
+            'name': habit['name'],
+            'color': habit['color'] or '#D96A34',
+            'week_count': week_count,
+            'week_pct': int(week_count / days_elapsed_this_week * 100),
+            'month_count': month_count,
+            'month_pct': int(month_count / today.day * 100),
+        })
 
-    streaks = [get_streak(h['id'], h['repeat_days'], today) for h in habits]
+    streaks = [get_streak(h['id'], h['repeat_days'], today, conn) for h in habits]
     best_streak = max(streaks) if streaks else 0
 
     week_total = sum(h['week_count'] for h in habit_data)
@@ -408,8 +424,9 @@ def calendar_index():
 @app.route("/settings")
 def settings():
     owner = session["uid"]
-    categories = get_categories(owner)
-    prefs = get_preferences(owner)
+    conn = get_request_conn()
+    categories = get_categories(owner, conn)
+    prefs = get_preferences(owner, conn)
     return render_template("settings.html", categories=categories, prefs=prefs)
 
 @app.route("/preferences/toggle-streaks", methods=["POST"])
