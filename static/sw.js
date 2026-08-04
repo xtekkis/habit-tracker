@@ -1,4 +1,10 @@
-const CACHE_NAME = 'habit-tracker-v3';
+// Bump this on every commit that touches style.css, templates, or any file
+// in STATIC_ASSETS below. The fetch handler's stale-while-revalidate only
+// refreshes the cache in the background *after* serving whatever's already
+// cached, so an unchanged CACHE_NAME means installed PWA users keep briefly
+// seeing one-version-old assets on every load instead of getting the fresh
+// ones immediately via a real cache reset.
+const CACHE_NAME = 'habit-tracker-v4';
 const STATIC_ASSETS = [
     '/static/style.css',
     '/static/lucide.min.js',
