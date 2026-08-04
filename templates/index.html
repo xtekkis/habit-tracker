@@ -606,12 +606,15 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
         var self = this;
         var habitId = this.dataset.habitId;
         self.disabled = true;
-        fetch('/log/' + habitId + '?local_date=' + encodeURIComponent(getLocalDateString()), { method: 'POST' })
+        fetch('/log/' + habitId + '?local_date=' + encodeURIComponent(getLocalDateString()), {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'fetch' }
+        })
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (!data.done) {
                 self.disabled = false;
-                showToast('Could not log that habit. Try reloading the page.', true);
+                showToast(data.error || 'Could not log that habit. Try reloading the page.', true);
                 return;
             }
 

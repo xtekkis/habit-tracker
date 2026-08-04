@@ -79,22 +79,42 @@ def set_security_headers(response):
     )
     return response
 
-# In-memory, per-IP rate limiting for the two creation routes, so a scripted
-# loop can't spam habits/categories forever and fill the disk. Keyed by IP
-# rather than the session uid, since a request that sends no cookie at all
-# just gets a fresh uid every time - IP is the one thing that isn't trivially
-# reset on every request. Resets on app restart; fine for a single-process,
-# low-traffic deploy like this one.
+# In-memory, per-IP rate limiting so a scripted loop can't spam habit
+# creation/editing/logging forever. Keyed by IP rather than the session uid,
+# since a request that sends no cookie at all just gets a fresh uid every
+# time - IP is the one thing that isn't trivially reset on every request.
+# Resets on app restart; fine for a single-process, low-traffic deploy like
+# this one.
 _rate_limit_hits = defaultdict(list)
+_rate_limit_calls_since_sweep = 0
+_RATE_LIMIT_SWEEP_EVERY = 100
+_RATE_LIMIT_SWEEP_MAX_AGE = 3600  # comfortably above any window_seconds in use below
+
+def _sweep_rate_limit_hits(now):
+    # A key (ip, endpoint) is never removed just because that IP stops
+    # showing up, so without this the dict grows by one entry per distinct
+    # IP/endpoint pair ever seen, for the life of the process. Runs
+    # periodically rather than every call, since it walks every key.
+    cutoff = now - _RATE_LIMIT_SWEEP_MAX_AGE
+    stale_keys = [key for key, hits in _rate_limit_hits.items() if not any(t >= cutoff for t in hits)]
+    for key in stale_keys:
+        del _rate_limit_hits[key]
 
 def rate_limit(limit=10, window_seconds=600):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
+            global _rate_limit_calls_since_sweep
             key = (request.remote_addr, f.__name__)
             now = time.time()
             cutoff = now - window_seconds
             hits = [t for t in _rate_limit_hits[key] if t >= cutoff]
+
+            _rate_limit_calls_since_sweep += 1
+            if _rate_limit_calls_since_sweep >= _RATE_LIMIT_SWEEP_EVERY:
+                _rate_limit_calls_since_sweep = 0
+                _sweep_rate_limit_hits(now)
+
             if len(hits) >= limit:
                 _rate_limit_hits[key] = hits
                 error = "Too many requests. Try again in a few minutes."
@@ -267,6 +287,7 @@ def add_habit():
     return redirect(url_for("index"))
 
 @app.route("/delete/<int:habit_id>", methods=["POST"])
+@rate_limit()
 def delete_habit(habit_id):
     owner = session["uid"]
     with db_connection() as conn:
@@ -279,18 +300,30 @@ def delete_habit(habit_id):
 
 @app.route("/weekly")
 def weekly_summary():
+    from datetime import date
     owner = session["uid"]
     today = get_local_today()
     conn = get_request_conn()
     prefs = get_preferences(owner, conn)
     week_start = get_week_start(today, prefs["start_week"])
     month_start = today.replace(day=1)
-    days_elapsed_this_week = (today - week_start).days + 1
 
-    habits = conn.execute("SELECT id, name, category_id, color, repeat_days FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
+    habits = conn.execute("SELECT id, name, category_id, color, repeat_days, created_at FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
 
     habit_data = []
+    week_possible = 0
+    month_possible = 0
     for habit in habits:
+        # A habit's % is out of the days it's actually existed within the
+        # period, not the whole period - otherwise a habit created today
+        # (or this month) shows an unfairly low % for the rest of it, despite
+        # a perfect record so far.
+        created = date.fromisoformat(habit['created_at'])
+        week_days_active = (today - max(week_start, created)).days + 1
+        month_days_active = (today - max(month_start, created)).days + 1
+        week_possible += week_days_active
+        month_possible += month_days_active
+
         week_count = conn.execute(
             "SELECT COUNT(*) FROM logs WHERE habit_id = ? AND logged_date BETWEEN ? AND ?",
             (habit['id'], week_start.isoformat(), today.isoformat())
@@ -303,9 +336,9 @@ def weekly_summary():
             'name': habit['name'],
             'color': habit['color'] or '#D96A34',
             'week_count': week_count,
-            'week_pct': int(week_count / days_elapsed_this_week * 100),
+            'week_pct': int(week_count / week_days_active * 100),
             'month_count': month_count,
-            'month_pct': int(month_count / today.day * 100),
+            'month_pct': int(month_count / month_days_active * 100),
         })
 
     streaks = [get_streak(h['id'], h['repeat_days'], today, conn) for h in habits]
@@ -313,12 +346,10 @@ def weekly_summary():
 
     week_total = sum(h['week_count'] for h in habit_data)
     week_active = sum(1 for h in habit_data if h['week_count'] > 0)
-    week_possible = len(habits) * days_elapsed_this_week
     week_rate = int(week_total / week_possible * 100) if week_possible > 0 else 0
 
     month_total = sum(h['month_count'] for h in habit_data)
     month_active = sum(1 for h in habit_data if h['month_count'] > 0)
-    month_possible = len(habits) * today.day
     month_rate = int(month_total / month_possible * 100) if month_possible > 0 else 0
 
     habit_count = len(habits)
@@ -334,6 +365,7 @@ def weekly_summary():
     )
 
 @app.route("/edit/<int:habit_id>", methods=["POST"])
+@rate_limit()
 def edit_habit(habit_id):
     owner = session["uid"]
     name = request.form.get("name", "").strip()[:100]
@@ -541,6 +573,7 @@ def export_csv():
     )
 
 @app.route("/log/<int:habit_id>", methods=["POST"])
+@rate_limit(limit=60, window_seconds=600)  # higher than other routes - checking off a long habit list in one sitting is normal use, not abuse
 def log_habit(habit_id):
     owner = session["uid"]
     today = get_local_today()
