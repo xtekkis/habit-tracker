@@ -205,7 +205,7 @@ def index():
         SELECT h.*, c.name as category_name
         FROM habits h
         LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
-        WHERE h.owner = ?
+        WHERE h.owner = ? AND h.archived_at IS NULL
         ORDER BY h.sort_order ASC, h.created_at DESC
     """, (owner,)).fetchall()
     logged_today = set(
@@ -299,6 +299,34 @@ def delete_habit(habit_id):
             conn.commit()
     return redirect(url_for("index"))
 
+@app.route("/habit/<int:habit_id>/archive", methods=["POST"])
+@rate_limit()
+def archive_habit(habit_id):
+    from datetime import datetime
+    owner = session["uid"]
+    with db_connection() as conn:
+        owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ? AND archived_at IS NULL", (habit_id, owner)).fetchone()
+        if owned:
+            conn.execute("UPDATE habits SET archived_at = ? WHERE id = ?", (datetime.now().isoformat(), habit_id))
+            conn.commit()
+    return redirect(url_for("index"))
+
+@app.route("/habit/<int:habit_id>/unarchive", methods=["POST"])
+@rate_limit()
+def unarchive_habit(habit_id):
+    owner = session["uid"]
+    with db_connection() as conn:
+        habit = conn.execute("SELECT id, name FROM habits WHERE id = ? AND owner = ? AND archived_at IS NOT NULL", (habit_id, owner)).fetchone()
+        if habit:
+            try:
+                conn.execute("UPDATE habits SET archived_at = NULL WHERE id = ?", (habit_id,))
+                conn.commit()
+            except sqlite3.IntegrityError:
+                # An active habit already has this name - restoring would
+                # collide with the partial UNIQUE(owner, name) index.
+                flash(f'Can\'t restore "{habit["name"]}" - you already have an active habit with that name.', 'error')
+    return redirect(url_for("settings"))
+
 @app.route("/habits/reorder", methods=["POST"])
 @rate_limit()
 def reorder():
@@ -327,7 +355,7 @@ def weekly_summary():
     week_start = get_week_start(today, prefs["start_week"])
     month_start = today.replace(day=1)
 
-    habits = conn.execute("SELECT id, name, category_id, color, repeat_days, created_at FROM habits WHERE owner = ? ORDER BY sort_order ASC, created_at DESC", (owner,)).fetchall()
+    habits = conn.execute("SELECT id, name, category_id, color, repeat_days, created_at FROM habits WHERE owner = ? AND archived_at IS NULL ORDER BY sort_order ASC, created_at DESC", (owner,)).fetchall()
 
     habit_data = []
     week_possible = 0
@@ -462,7 +490,7 @@ def calendar_index():
             SELECT h.*, c.name as category_name
             FROM habits h
             LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
-            WHERE h.owner = ?
+            WHERE h.owner = ? AND h.archived_at IS NULL
             ORDER BY h.sort_order ASC, h.created_at DESC
         """, (owner,)).fetchall()
     return render_template("calendar_index.html", habits=habits)
@@ -598,7 +626,7 @@ def log_habit(habit_id):
     today = get_local_today()
 
     with db_connection() as conn:
-        owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
+        owned = conn.execute("SELECT id FROM habits WHERE id = ? AND owner = ? AND archived_at IS NULL", (habit_id, owner)).fetchone()
         if not owned:
             return jsonify({"done": False}), 404
 
@@ -611,7 +639,7 @@ def log_habit(habit_id):
         new_log = cursor.rowcount > 0
 
         today_weekday = today.weekday()
-        all_habits = conn.execute("SELECT id, repeat_days FROM habits WHERE owner = ?", (owner,)).fetchall()
+        all_habits = conn.execute("SELECT id, repeat_days FROM habits WHERE owner = ? AND archived_at IS NULL", (owner,)).fetchall()
         scheduled_ids = {h["id"] for h in all_habits if (h["repeat_days"] or "1111111")[today_weekday] == "1"}
         logged_today_ids = {row["habit_id"] for row in conn.execute("""
             SELECT l.habit_id FROM logs l

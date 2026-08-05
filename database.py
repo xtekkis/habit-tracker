@@ -100,6 +100,11 @@ def init_db():
     except Exception:
         pass
 
+    try:
+        cursor.execute("ALTER TABLE habits ADD COLUMN archived_at TEXT DEFAULT NULL")
+    except Exception:
+        pass
+
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_habits_owner ON habits(owner)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_categories_owner ON categories(owner)")
 
@@ -121,16 +126,29 @@ def init_db():
                 reminder_time TEXT DEFAULT NULL,
                 icon TEXT DEFAULT 'check',
                 color TEXT DEFAULT '#D96A34',
-                owner TEXT
+                owner TEXT,
+                sort_order INTEGER,
+                archived_at TEXT DEFAULT NULL
             )
         """)
         cursor.execute("""
-            INSERT INTO habits (id, name, created_at, category_id, repeat_days, reminder_time, icon, color, owner)
-            SELECT id, name, created_at, category_id, repeat_days, reminder_time, icon, color, owner FROM habits_old
+            INSERT INTO habits (id, name, created_at, category_id, repeat_days, reminder_time, icon, color, owner, sort_order, archived_at)
+            SELECT id, name, created_at, category_id, repeat_days, reminder_time, icon, color, owner, sort_order, archived_at FROM habits_old
         """)
         cursor.execute("DROP TABLE habits_old")
-        cursor.execute("CREATE UNIQUE INDEX idx_habits_owner_name ON habits(owner, name)")
+        cursor.execute("CREATE UNIQUE INDEX idx_habits_owner_name ON habits(owner, name) WHERE archived_at IS NULL")
         cursor.execute("CREATE INDEX idx_habits_owner ON habits(owner)")
+
+    # The UNIQUE(owner, name) index above only excludes archived habits going
+    # forward - for a DB that already has the plain (non-partial) version
+    # from before archiving existed, an archived habit's name would still
+    # permanently block reusing it. Migrate to the partial form once.
+    existing_index = cursor.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'index' AND name = 'idx_habits_owner_name'"
+    ).fetchone()
+    if existing_index and existing_index[0] and "WHERE" not in existing_index[0]:
+        cursor.execute("DROP INDEX idx_habits_owner_name")
+        cursor.execute("CREATE UNIQUE INDEX idx_habits_owner_name ON habits(owner, name) WHERE archived_at IS NULL")
 
     cursor.execute("PRAGMA index_list(categories)")
     if not any(row[1] == "idx_categories_owner_name" for row in cursor.fetchall()):
@@ -338,6 +356,17 @@ def get_categories(owner, conn=None):
     if owns_conn:
         conn.close()
     return cats
+
+def get_archived_habits(owner, conn=None):
+    owns_conn = conn is None
+    conn = conn or get_connection()
+    habits = conn.execute(
+        "SELECT id, name FROM habits WHERE owner = ? AND archived_at IS NOT NULL ORDER BY archived_at DESC",
+        (owner,)
+    ).fetchall()
+    if owns_conn:
+        conn.close()
+    return habits
 
 def get_weekly_counts(owner, start_week="monday", today=None, conn=None):
     owns_conn = conn is None
