@@ -43,6 +43,10 @@
     {% for habit in habits %}
     <div class="habit-card {% if habit['id'] in logged_today %}done{% endif %}" data-category="{{ habit['category_id'] or '' }}">
 
+        <div class="habit-drag-handle" aria-hidden="true">
+            <i data-lucide="grip-vertical" aria-hidden="true"></i>
+        </div>
+
         <div class="habit-tile" data-color="{{ habit['color'] or '#D96A34' }}">
             <i data-lucide="{{ habit['icon'] or 'check' }}" aria-hidden="true"></i>
         </div>
@@ -665,6 +669,85 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
             showToast('Something went wrong. Check your connection and try again.', true);
         });
     });
+});
+
+// Drag-to-reorder via the grip handle. Pointer Events unify mouse/touch/pen
+// in one set of listeners. Only the handle (not the whole card) starts a
+// drag, so scrolling the list and the base.html swipe-tab gesture are
+// unaffected everywhere else on the card.
+document.querySelectorAll('.habit-drag-handle').forEach(function(handle) {
+    var card = null;
+    var pointerId = null;
+
+    function moveOverSiblings(e) {
+        var list = card.parentElement;
+        var siblings = Array.prototype.filter.call(list.children, function(el) {
+            return el !== card && el.classList.contains('habit-card');
+        });
+        var insertBefore = null;
+        for (var i = 0; i < siblings.length; i++) {
+            var rect = siblings[i].getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2) {
+                insertBefore = siblings[i];
+                break;
+            }
+        }
+        if (insertBefore) {
+            if (insertBefore !== card.nextSibling) list.insertBefore(card, insertBefore);
+        } else if (list.lastElementChild !== card) {
+            list.appendChild(card);
+        }
+    }
+
+    function endDrag(e) {
+        if (!card || e.pointerId !== pointerId) return;
+        var draggedCard = card;
+        var list = draggedCard.parentElement;
+        draggedCard.classList.remove('dragging');
+        card = null;
+        pointerId = null;
+
+        var order = Array.prototype.filter.call(list.children, function(el) {
+            return el.classList.contains('habit-card');
+        }).map(function(el) {
+            return el.querySelector('.check-btn').dataset.habitId;
+        });
+
+        fetch('/habits/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: order })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.ok) {
+                showToast(data.error || 'Could not save the new order. Reloading.', true);
+                window.location.reload();
+            }
+        })
+        .catch(function() {
+            showToast('Could not save the new order. Reloading.', true);
+            window.location.reload();
+        });
+    }
+
+    handle.addEventListener('pointerdown', function(e) {
+        if (e.button !== 0) return;
+        card = handle.closest('.habit-card');
+        if (!card) return;
+        pointerId = e.pointerId;
+        handle.setPointerCapture(pointerId);
+        card.classList.add('dragging');
+        e.preventDefault();
+    });
+
+    handle.addEventListener('pointermove', function(e) {
+        if (!card || e.pointerId !== pointerId) return;
+        moveOverSiblings(e);
+    });
+
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
 });
 
 // Auto-open add sheet when navigated from another tab via FAB (?add=1)

@@ -613,6 +613,33 @@ button:active {
     opacity: 0.75;
 }
 
+.habit-card.dragging {
+    box-shadow: var(--shadow-lg);
+    opacity: 0.9;
+    z-index: 10;
+}
+
+.habit-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    cursor: grab;
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.habit-drag-handle:active {
+    cursor: grabbing;
+}
+
+.habit-drag-handle svg {
+    width: 18px;
+    height: 18px;
+}
+
 /* Color tile */
 
 .habit-tile {
