@@ -9,7 +9,7 @@ from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash, g
 from flask.sessions import SecureCookieSessionInterface
-from database import init_db, db_connection, get_connection, get_streak, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner
+from database import init_db, db_connection, get_connection, get_streak, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner, reorder_habits
 
 app = Flask(__name__)
 
@@ -206,7 +206,7 @@ def index():
         FROM habits h
         LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
         WHERE h.owner = ?
-        ORDER BY h.created_at DESC
+        ORDER BY h.sort_order ASC, h.created_at DESC
     """, (owner,)).fetchall()
     logged_today = set(
         row["habit_id"] for row in conn.execute("""
@@ -278,8 +278,9 @@ def add_habit():
         if name:
             try:
                 conn.execute(
-                    "INSERT INTO habits (name, category_id, repeat_days, reminder_time, icon, color, owner) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (name, category_id, repeat_days, reminder_time, icon, color, owner)
+                    "INSERT INTO habits (name, category_id, repeat_days, reminder_time, icon, color, owner, sort_order) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(sort_order), -1) + 1 FROM habits WHERE owner = ?))",
+                    (name, category_id, repeat_days, reminder_time, icon, color, owner, owner)
                 )
                 conn.commit()
             except sqlite3.IntegrityError:
@@ -298,6 +299,24 @@ def delete_habit(habit_id):
             conn.commit()
     return redirect(url_for("index"))
 
+@app.route("/habits/reorder", methods=["POST"])
+@rate_limit()
+def reorder():
+    owner = session["uid"]
+    body = request.get_json(silent=True) or {}
+    subset_ids = body.get("order")
+    if not isinstance(subset_ids, list) or not subset_ids:
+        return jsonify({"ok": False, "error": "Invalid order."}), 400
+    try:
+        subset_ids = [int(habit_id) for habit_id in subset_ids]
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "Invalid order."}), 400
+
+    with db_connection() as conn:
+        if not reorder_habits(owner, subset_ids, conn):
+            return jsonify({"ok": False, "error": "That order is out of date - reload and try again."}), 409
+    return jsonify({"ok": True})
+
 @app.route("/weekly")
 def weekly_summary():
     from datetime import date
@@ -308,7 +327,7 @@ def weekly_summary():
     week_start = get_week_start(today, prefs["start_week"])
     month_start = today.replace(day=1)
 
-    habits = conn.execute("SELECT id, name, category_id, color, repeat_days, created_at FROM habits WHERE owner = ? ORDER BY created_at DESC", (owner,)).fetchall()
+    habits = conn.execute("SELECT id, name, category_id, color, repeat_days, created_at FROM habits WHERE owner = ? ORDER BY sort_order ASC, created_at DESC", (owner,)).fetchall()
 
     habit_data = []
     week_possible = 0
@@ -444,7 +463,7 @@ def calendar_index():
             FROM habits h
             LEFT JOIN categories c ON h.category_id = c.id AND c.owner = h.owner
             WHERE h.owner = ?
-            ORDER BY h.created_at DESC
+            ORDER BY h.sort_order ASC, h.created_at DESC
         """, (owner,)).fetchall()
     return render_template("calendar_index.html", habits=habits)
 

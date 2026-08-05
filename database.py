@@ -95,6 +95,11 @@ def init_db():
     except Exception:
         pass
 
+    try:
+        cursor.execute("ALTER TABLE habits ADD COLUMN sort_order INTEGER")
+    except Exception:
+        pass
+
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_habits_owner ON habits(owner)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_categories_owner ON categories(owner)")
 
@@ -182,6 +187,20 @@ def init_db():
     cursor.execute("DELETE FROM habits WHERE owner IS NULL")
     cursor.execute("DELETE FROM categories WHERE owner IS NULL")
 
+    # Backfill sort_order for habits that predate it, using the order they
+    # were already shown in (created_at DESC) so nothing visibly reorders the
+    # first time this ships. New habits get sort_order assigned directly at
+    # creation, so this only ever has work to do once per pre-existing owner.
+    owners_needing_backfill = [row[0] for row in cursor.execute(
+        "SELECT DISTINCT owner FROM habits WHERE sort_order IS NULL"
+    ).fetchall()]
+    for owner in owners_needing_backfill:
+        habit_ids = [row[0] for row in cursor.execute(
+            "SELECT id FROM habits WHERE owner = ? AND sort_order IS NULL ORDER BY created_at DESC", (owner,)
+        ).fetchall()]
+        for index, habit_id in enumerate(habit_ids):
+            cursor.execute("UPDATE habits SET sort_order = ? WHERE id = ?", (index, habit_id))
+
     conn.commit()
     conn.close()
 
@@ -258,6 +277,39 @@ def get_habit(habit_id, owner):
     habit = conn.execute("SELECT * FROM habits WHERE id = ? AND owner = ?", (habit_id, owner)).fetchone()
     conn.close()
     return habit
+
+def reorder_habits(owner, subset_ids, conn=None):
+    # subset_ids is the new relative order for some (not necessarily all) of
+    # the owner's habits - e.g. dragging on Today, which only shows habits
+    # scheduled for today. Habits outside the subset (hidden by that filter)
+    # keep their existing position; the subset is spliced back into the full
+    # order at the positions it collectively occupied. Returns False without
+    # writing anything if subset_ids has duplicates or ids the owner doesn't
+    # own, so a stale/tampered client can't corrupt another owner's order.
+    owns_conn = conn is None
+    conn = conn or get_connection()
+
+    full_order = [row["id"] for row in conn.execute(
+        "SELECT id FROM habits WHERE owner = ? ORDER BY sort_order ASC, created_at DESC", (owner,)
+    ).fetchall()]
+
+    subset_set = set(subset_ids)
+    if len(subset_ids) != len(subset_set) or not subset_set.issubset(set(full_order)):
+        if owns_conn:
+            conn.close()
+        return False
+
+    positions = [i for i, habit_id in enumerate(full_order) if habit_id in subset_set]
+    new_full = list(full_order)
+    for pos, new_id in zip(positions, subset_ids):
+        new_full[pos] = new_id
+
+    for index, habit_id in enumerate(new_full):
+        conn.execute("UPDATE habits SET sort_order = ? WHERE id = ?", (index, habit_id))
+    conn.commit()
+    if owns_conn:
+        conn.close()
+    return True
 
 def category_belongs_to_owner(category_id, owner):
     conn = get_connection()
