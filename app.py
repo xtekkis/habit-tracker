@@ -9,7 +9,7 @@ from functools import wraps
 
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, session, flash, g
 from flask.sessions import SecureCookieSessionInterface
-from database import init_db, db_connection, get_connection, get_streak, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner, reorder_habits
+from database import init_db, db_connection, get_connection, get_streak, get_weekly_counts, get_categories, get_habit, get_logged_dates_for_month, count_perfect_days, get_preferences, set_preference, get_week_start, get_best_streak, add_xp, get_player_state, category_belongs_to_owner, reorder_habits, get_archived_habits
 
 app = Flask(__name__)
 
@@ -501,7 +501,8 @@ def settings():
     conn = get_request_conn()
     categories = get_categories(owner, conn)
     prefs = get_preferences(owner, conn)
-    return render_template("settings.html", categories=categories, prefs=prefs)
+    archived_habits = get_archived_habits(owner, conn)
+    return render_template("settings.html", categories=categories, prefs=prefs, archived_habits=archived_habits)
 
 @app.route("/preferences/toggle-streaks", methods=["POST"])
 def toggle_streaks():

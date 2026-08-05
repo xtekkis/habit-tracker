@@ -85,6 +85,9 @@
                        data-icon="{{ habit['icon'] or 'check' }}"
                        data-color="{{ habit['color'] or '#D96A34' }}">Edit</a>
                     <a class="overflow-item" href="/habit/{{ habit['id'] }}/calendar">Calendar</a>
+                    <form method="POST" action="/habit/{{ habit['id'] }}/archive" class="form-contents">
+                        <button type="submit" class="overflow-item">Archive</button>
+                    </form>
                     <a class="overflow-item overflow-danger open-delete" href="#"
                        data-id="{{ habit['id'] }}"
                        data-name="{{ habit['name'] }}">Delete</a>

@@ -890,11 +890,17 @@ button:active {
 
 .overflow-item {
     display: block;
+    width: 100%;
     padding: 10px 14px;
+    font: inherit;
     font-size: 14px;
     font-weight: 500;
     color: var(--text);
     text-decoration: none;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
     transition: background 0.15s;
 }
 
@@ -1977,6 +1983,23 @@ html.no-scroll {
 
 .cat-mgmt-delete:active {
     transform: scale(0.93);
+}
+
+.cat-mgmt-restore {
+    background: transparent;
+    border: none;
+    padding: 6px 10px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+}
+
+.cat-mgmt-restore:hover {
+    background: var(--primary-soft);
 }
 
 .cat-mgmt-delete svg {

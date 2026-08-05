@@ -22,6 +22,14 @@
         </div>
         <i data-lucide="chevron-right" class="settings-item-arrow" aria-hidden="true"></i>
     </button>
+    <button class="settings-item" id="archivedHabitsBtn">
+        <div class="settings-item-icon icon-muted"><i data-lucide="archive" aria-hidden="true"></i></div>
+        <div class="settings-item-body">
+            <span class="settings-item-label">Archived habits</span>
+            <span class="settings-item-sub">{{ archived_habits|length }} archived</span>
+        </div>
+        <i data-lucide="chevron-right" class="settings-item-arrow" aria-hidden="true"></i>
+    </button>
 </div>
 
 <p class="section-label">Preferences</p>
@@ -93,6 +101,33 @@
     </div>
 </div>
 
+<!-- Archived habits sheet -->
+<div class="sheet-overlay" id="archivedHabitsSheet">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="archivedHabitsSheetTitle" tabindex="-1">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+            <h2 class="sheet-title" id="archivedHabitsSheetTitle">Archived habits</h2>
+            <button class="sheet-close-btn sheet-close" data-sheet="archivedHabitsSheet" aria-label="Close">
+                <i data-lucide="x" aria-hidden="true"></i>
+            </button>
+        </div>
+        {% if archived_habits %}
+        <div class="cat-mgmt-list">
+            {% for habit in archived_habits %}
+            <div class="cat-mgmt-item">
+                <span class="cat-mgmt-name">{{ habit['name'] }}</span>
+                <form method="POST" action="/habit/{{ habit['id'] }}/unarchive" class="form-contents">
+                    <button type="submit" class="cat-mgmt-restore">Unarchive</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="cat-mgmt-empty">No archived habits. Archive one from its overflow menu on the Today tab.</p>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Reset confirmation modal -->
 <div class="modal-overlay" id="resetModal">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle" tabindex="-1">
@@ -134,6 +169,10 @@ document.querySelectorAll('.sheet-overlay').forEach(function(overlay) {
 
 document.getElementById('manageCategoriesBtn').addEventListener('click', function() {
     openSheet('categoryMgmtSheet');
+});
+
+document.getElementById('archivedHabitsBtn').addEventListener('click', function() {
+    openSheet('archivedHabitsSheet');
 });
 
 var resetModalLastFocused = null;
