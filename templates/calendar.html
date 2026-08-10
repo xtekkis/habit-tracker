@@ -30,6 +30,11 @@
         {% for day in week %}
         {% if day == 0 %}
         <div class="cal-day-empty"></div>
+        {% elif can_backfill_yesterday and day == yesterday_day %}
+        <button type="button" class="cal-day cal-day-backfillable" data-habit-id="{{ habit['id'] }}"
+                aria-label="Log {{ habit['name'] }} for yesterday">
+            {{ day }}
+        </button>
         {% else %}
         <div class="cal-day {% if day in logged_days %}cal-day-logged{% endif %} {% if today_day == day %}cal-day-today{% endif %}">
             {{ day }}
@@ -63,5 +68,32 @@
         </div>
     </div>
 </div>
+
+<script>
+var backfillBtn = document.querySelector('.cal-day-backfillable');
+if (backfillBtn) {
+    backfillBtn.addEventListener('click', function() {
+        var btn = this;
+        btn.disabled = true;
+        fetch('/habit/' + btn.dataset.habitId + '/log-yesterday', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'fetch' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.done) {
+                btn.disabled = false;
+                showToast(data.error || 'Could not log yesterday. Try reloading the page.', true);
+                return;
+            }
+            window.location.reload();
+        })
+        .catch(function() {
+            btn.disabled = false;
+            showToast('Something went wrong. Check your connection and try again.', true);
+        });
+    });
+}
+</script>
 
 {% endblock %}

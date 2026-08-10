@@ -1671,6 +1671,26 @@ html.no-scroll {
     font-weight: 700;
 }
 
+.cal-day-backfillable {
+    border: 2px dashed var(--primary);
+    background: none;
+    color: var(--primary);
+    font: inherit;
+    padding: 0;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.cal-day-backfillable:hover,
+.cal-day-backfillable:active {
+    background: var(--primary-soft);
+}
+
+.cal-day-backfillable:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
 /* Calendar stats card */
 
 .cal-stats {

@@ -570,6 +570,17 @@ def habit_calendar(habit_id):
     streak = get_streak(habit_id, habit["repeat_days"], today)
     best_streak = get_best_streak(habit_id, habit["repeat_days"])
 
+    # Backfilling is deliberately limited to exactly one day back, so it's
+    # only ever offered when yesterday falls within the month being viewed,
+    # was actually a scheduled day for this habit, and isn't logged yet.
+    yesterday = today - timedelta(days=1)
+    yesterday_day = yesterday.day if (yesterday.year == year and yesterday.month == month) else None
+    yesterday_scheduled = (habit["repeat_days"] or "1111111")[yesterday.weekday()] == "1"
+    can_backfill_yesterday = (
+        bool(yesterday_day) and yesterday_scheduled
+        and yesterday_day not in logged_days and habit["archived_at"] is None
+    )
+
     return render_template("calendar.html",
         habit=habit,
         weeks=weeks,
@@ -584,7 +595,52 @@ def habit_calendar(habit_id):
         best_streak=best_streak,
         month_logged=month_logged,
         month_days=month_days,
+        yesterday_day=yesterday_day,
+        can_backfill_yesterday=can_backfill_yesterday,
     )
+
+@app.route("/habit/<int:habit_id>/log-yesterday", methods=["POST"])
+@rate_limit()
+def log_yesterday(habit_id):
+    # Deliberately scoped to exactly one day back, computed server-side from
+    # the request's own local-today resolution - never client-supplied - so
+    # this can't be widened into an open-ended backdate-anything endpoint.
+    owner = session["uid"]
+    yesterday = get_local_today() - timedelta(days=1)
+
+    with db_connection() as conn:
+        habit = conn.execute(
+            "SELECT id, repeat_days FROM habits WHERE id = ? AND owner = ? AND archived_at IS NULL",
+            (habit_id, owner)
+        ).fetchone()
+        if not habit:
+            return jsonify({"done": False}), 404
+        if (habit["repeat_days"] or "1111111")[yesterday.weekday()] != "1":
+            return jsonify({"done": False, "error": "This habit wasn't scheduled yesterday."}), 400
+
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT OR IGNORE INTO logs (habit_id, logged_date) VALUES (?, ?)",
+            (habit_id, yesterday.isoformat())
+        )
+        conn.commit()
+        new_log = cursor.rowcount > 0
+
+        yesterday_weekday = yesterday.weekday()
+        all_habits = conn.execute("SELECT id, repeat_days FROM habits WHERE owner = ? AND archived_at IS NULL", (owner,)).fetchall()
+        scheduled_ids = {h["id"] for h in all_habits if (h["repeat_days"] or "1111111")[yesterday_weekday] == "1"}
+        logged_ids = {row["habit_id"] for row in conn.execute("""
+            SELECT l.habit_id FROM logs l
+            JOIN habits h ON l.habit_id = h.id
+            WHERE l.logged_date = ? AND h.owner = ?
+        """, (yesterday.isoformat(), owner)).fetchall()}
+
+    if new_log:
+        add_xp(owner, 10)
+        if scheduled_ids and scheduled_ids.issubset(logged_ids):
+            add_xp(owner, 25)
+
+    return jsonify({"done": new_log, "player": get_player_state(owner)})
 
 def _csv_safe(value):
     # Prefix values that would otherwise be interpreted as a formula by
