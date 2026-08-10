@@ -399,9 +399,8 @@ def weekly_summary():
     month_active = sum(1 for h in habit_data if h['month_count'] > 0)
     month_rate = int(month_total / month_possible * 100) if month_possible > 0 else 0
 
-    habit_count = len(habits)
-    perfect_week = count_perfect_days(week_start.isoformat(), today.isoformat(), habit_count, owner)
-    perfect_month = count_perfect_days(month_start.isoformat(), today.isoformat(), habit_count, owner)
+    perfect_week = count_perfect_days(week_start.isoformat(), today.isoformat(), owner, conn)
+    perfect_month = count_perfect_days(month_start.isoformat(), today.isoformat(), owner, conn)
 
     return render_template("weekly.html",
         habit_data=habit_data,

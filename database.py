@@ -247,22 +247,61 @@ def get_week_start(today, start_week):
         return today - timedelta(days=(today.weekday() + 1) % 7)
     return today - timedelta(days=today.weekday())
 
-def count_perfect_days(start, end, habit_count, owner):
-    if habit_count == 0:
+def count_perfect_days(start, end, owner, conn=None):
+    # A day is perfect when every habit actually scheduled that day was
+    # logged. This has to respect each habit's repeat_days the same way
+    # get_streak() does - counting against every habit regardless of schedule
+    # meant a Mon/Wed/Fri habit made every other day impossible to complete,
+    # so two habits each following their own schedule perfectly for a week
+    # reported 1 perfect day instead of 7.
+    #
+    # Only currently-active habits are considered, and only from the date
+    # each was created. Archived habits are excluded entirely rather than
+    # counted-but-not-required, since leaving their old logs in the tally
+    # made archiving retroactively remove perfect days from past weeks.
+    owns_conn = conn is None
+    conn = conn or get_connection()
+
+    habits = conn.execute(
+        "SELECT id, repeat_days, created_at FROM habits WHERE owner = ? AND archived_at IS NULL",
+        (owner,)
+    ).fetchall()
+    if not habits:
+        if owns_conn:
+            conn.close()
         return 0
-    conn = get_connection()
-    result = conn.execute("""
-        SELECT COUNT(*) FROM (
-            SELECT l.logged_date
-            FROM logs l
-            JOIN habits h ON l.habit_id = h.id
-            WHERE l.logged_date BETWEEN ? AND ? AND h.owner = ?
-            GROUP BY l.logged_date
-            HAVING COUNT(DISTINCT l.habit_id) = ?
-        )
-    """, (start, end, owner, habit_count)).fetchone()[0]
-    conn.close()
-    return result
+
+    habit_ids = [h["id"] for h in habits]
+    placeholders = ",".join("?" for _ in habit_ids)
+    logged = set()
+    for row in conn.execute(
+        "SELECT habit_id, logged_date FROM logs "
+        "WHERE logged_date BETWEEN ? AND ? AND habit_id IN (%s)" % placeholders,
+        [start, end] + habit_ids
+    ).fetchall():
+        logged.add((row["habit_id"], row["logged_date"]))
+
+    if owns_conn:
+        conn.close()
+
+    schedules = [
+        (h["id"], h["repeat_days"] or "1111111", date.fromisoformat(h["created_at"]))
+        for h in habits
+    ]
+
+    perfect = 0
+    day = date.fromisoformat(start)
+    last = date.fromisoformat(end)
+    while day <= last:
+        due = [hid for hid, repeat, created in schedules
+               if repeat[day.weekday()] == "1" and created <= day]
+        # A day with nothing scheduled isn't an achievement, so it doesn't
+        # count as perfect rather than counting vacuously.
+        if due and all((hid, day.isoformat()) in logged for hid in due):
+            perfect += 1
+        day += timedelta(days=1)
+
+    return perfect
 
 def get_best_streak(habit_id, repeat_days):
     conn = get_connection()
