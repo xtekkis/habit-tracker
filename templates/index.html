@@ -722,13 +722,24 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
 // in one set of listeners. Only the handle (not the whole card) starts a
 // drag, so scrolling the list and the base.html swipe-tab gesture are
 // unaffected everywhere else on the card.
+//
+// Geometry is measured on grab and after each reorder, never per pointer
+// event, and moves are coalesced into one animation frame. Measuring inside
+// every pointermove forced a synchronous layout dozens of times a second,
+// which is what made dragging feel like it lagged behind the cursor.
 (function() {
     var list = document.querySelector('.habit-list');
     if (!list) return;
 
-    var card = null;        // the card currently being dragged
+    var card = null;
     var pointerId = null;
-    var grabOffset = 0;     // pointer Y minus the card's top edge, held constant
+    var grabX = 0, grabY = 0;        // where in the card the pointer took hold
+    var natLeft = 0, natTop = 0;     // card's laid-out position, ignoring transform
+    var cardW = 0, cardH = 0;
+    var bounds = null;               // list edges, for clamping
+    var otherRects = [];             // settled positions of the other cards
+    var lastX = 0, lastY = 0;
+    var frame = null;
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function cards() {
@@ -737,48 +748,96 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
         });
     }
 
-    // Glue the card to the pointer. The list keeps reflowing underneath it as
-    // neighbours swap around, so the offset is measured fresh each time
-    // against wherever the DOM currently wants to put the card.
-    function follow(clientY) {
-        card.style.transform = '';
-        var naturalTop = card.getBoundingClientRect().top;
-        card.style.transform =
-            'translateY(' + (clientY - grabOffset - naturalTop) + 'px) scale(1.03)';
+    // 1 on mobile (flex column), 2 on desktop (grid). Decides whether a drop
+    // position is judged vertically or in reading order across a row.
+    function columnCount() {
+        var cs = window.getComputedStyle(list);
+        if (cs.display !== 'grid') return 1;
+        return cs.gridTemplateColumns.split(' ').filter(Boolean).length;
     }
 
-    // Swap the card past any neighbour whose midpoint the pointer has crossed,
-    // then slide those neighbours into their new places instead of letting
-    // them jump: measure before, move, then animate from the old position back
-    // to zero (a FLIP).
-    function maybeReorder(clientY) {
-        var others = cards().filter(function(el) { return el !== card; });
+    function measure() {
+        var prev = card.style.transform;
+        card.style.transform = '';
+        var r = card.getBoundingClientRect();
+        natLeft = r.left; natTop = r.top; cardW = r.width; cardH = r.height;
+        card.style.transform = prev;
 
-        var before = null;
-        for (var i = 0; i < others.length; i++) {
-            var r = others[i].getBoundingClientRect();
-            if (clientY < r.top + r.height / 2) { before = others[i]; break; }
+        var lr = list.getBoundingClientRect();
+        bounds = { left: lr.left, right: lr.right, top: lr.top, bottom: lr.bottom };
+
+        otherRects = cards()
+            .filter(function(el) { return el !== card; })
+            .map(function(el) { return { el: el, r: el.getBoundingClientRect() }; });
+    }
+
+    // Keep the grab point under the pointer, but never let the card leave the
+    // list. Without the clamp it could be dragged far above the first habit or
+    // below the last, which read as the drag having broken.
+    function follow() {
+        var wantX = Math.max(bounds.left, Math.min(lastX - grabX, bounds.right - cardW));
+        var wantY = Math.max(bounds.top, Math.min(lastY - grabY, bounds.bottom - cardH));
+        card.style.transform = 'translate(' + (wantX - natLeft) + 'px, ' +
+                               (wantY - natTop) + 'px) scale(1.03)';
+    }
+
+    // Which card this one should land in front of, or null to go last.
+    function dropTarget(x, y) {
+        var cols = columnCount();
+        for (var i = 0; i < otherRects.length; i++) {
+            var r = otherRects[i].r;
+            if (cols === 1) {
+                if (y < r.top + r.height / 2) return otherRects[i].el;
+            } else {
+                // Reading order: a row above wins outright, otherwise it comes
+                // down to which side of the card's centre the pointer is on.
+                if (y < r.top) return otherRects[i].el;
+                if (y <= r.bottom && x < r.left + r.width / 2) return otherRects[i].el;
+            }
         }
-        var alreadyThere = before
+        return null;
+    }
+
+    function maybeReorder(x, y) {
+        var before = dropTarget(x, y);
+        var settled = before
             ? before === card.nextElementSibling
             : list.lastElementChild === card;
-        if (alreadyThere) return;
+        if (settled) return;
 
-        var firstTops = others.map(function(el) { return el.getBoundingClientRect().top; });
+        var others = cards().filter(function(el) { return el !== card; });
+        var from = others.map(function(el) { return el.getBoundingClientRect(); });
 
         if (before) list.insertBefore(card, before);
         else list.appendChild(card);
 
+        // Re-measure before running the FLIP, so the cached rects hold the
+        // settled destinations rather than mid-animation positions.
+        var to = others.map(function(el) { return el.getBoundingClientRect(); });
+        measure();
+
         if (reduceMotion) return;
         others.forEach(function(el, i) {
-            var delta = firstTops[i] - el.getBoundingClientRect().top;
-            if (!delta) return;
+            var dx = from[i].left - to[i].left;
+            var dy = from[i].top - to[i].top;
+            if (!dx && !dy) return;
             el.style.transition = 'none';
-            el.style.transform = 'translateY(' + delta + 'px)';
-            void el.offsetHeight;          // flush, so the jump-back actually animates
+            el.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+            void el.offsetHeight;   // flush, so the slide back actually animates
             el.style.transition = '';
             el.style.transform = '';
         });
+    }
+
+    function tick() {
+        frame = null;
+        if (!card) return;
+        maybeReorder(lastX, lastY);
+        follow();
+    }
+
+    function onScroll() {
+        if (card) measure();
     }
 
     function endDrag(e) {
@@ -786,6 +845,8 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
         var moved = card;
         card = null;
         pointerId = null;
+        if (frame) { cancelAnimationFrame(frame); frame = null; }
+        window.removeEventListener('scroll', onScroll, true);
 
         moved.classList.remove('dragging');
         moved.style.transform = '';
@@ -823,18 +884,26 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
             pointerId = e.pointerId;
             handle.setPointerCapture(pointerId);
 
-            grabOffset = e.clientY - card.getBoundingClientRect().top;
+            var r = card.getBoundingClientRect();
+            grabX = e.clientX - r.left;
+            grabY = e.clientY - r.top;
+            lastX = e.clientX;
+            lastY = e.clientY;
+
             list.classList.add('reordering');
             document.body.classList.add('dragging-active');
             card.classList.add('dragging');
-            follow(e.clientY);
+            measure();
+            follow();
+            window.addEventListener('scroll', onScroll, true);
             e.preventDefault();
         });
 
         handle.addEventListener('pointermove', function(e) {
             if (!card || e.pointerId !== pointerId) return;
-            maybeReorder(e.clientY);
-            follow(e.clientY);
+            lastX = e.clientX;
+            lastY = e.clientY;
+            if (!frame) frame = requestAnimationFrame(tick);
             e.preventDefault();
         });
 
