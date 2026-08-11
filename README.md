@@ -22,7 +22,7 @@ A habit tracker I built with Flask and SQLite. You add the habits you want to ke
 - Browse any habit's full history on its own calendar, including current and best streaks
 - Pick an icon and colour for each habit so they're easy to tell apart at a glance
 - Group habits into categories and filter the day's list by them
-- Set a daily reminder time per habit (uses browser notifications)
+- Set a daily reminder time per habit. These use browser notifications and only fire while the app is open, so if one passes while it's closed you'll see it the next time you open the app
 - Export all your check-ins to CSV whenever you want
 - Install it as an app on your phone or desktop, since it's a PWA that works offline
 - Works nicely on mobile and switches to a two-column layout on wider screens

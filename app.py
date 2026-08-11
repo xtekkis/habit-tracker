@@ -260,7 +260,7 @@ def index():
     weekly_counts = get_weekly_counts(owner, prefs["start_week"], today_date, conn)
     categories = get_categories(owner, conn)
     pending_reminders = [
-        {"name": h["name"], "time": h["reminder_time"]}
+        {"id": h["id"], "name": h["name"], "time": h["reminder_time"]}
         for h in habits
         if h["reminder_time"] and h["id"] not in logged_today
     ]

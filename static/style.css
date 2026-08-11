@@ -1902,6 +1902,13 @@ html.no-scroll {
     margin-bottom: 6px;
 }
 
+.reminder-hint {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-faint);
+}
+
 .reminder-time-wrap input[type="time"] {
     width: 100%;
     background: transparent;
