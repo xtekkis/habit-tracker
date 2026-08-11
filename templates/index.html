@@ -347,17 +347,17 @@ function addCategoryPillTo(pickerId, inputId, id, name) {
     selectCategoryPill(newPill, pickerId, inputId);
 }
 
-// Cat pill selection — add sheet
+// Category pill selection in the add sheet
 document.querySelectorAll('#addCatPills .cat-pill:not(.cat-pill-new)').forEach(function(pill) {
     wireCategoryPill(pill, 'addCatPills', 'addCatInput');
 });
 
-// Cat pill selection — edit sheet
+// Category pill selection in the edit sheet
 document.querySelectorAll('#editCatPills .cat-pill:not(.cat-pill-new)').forEach(function(pill) {
     wireCategoryPill(pill, 'editCatPills', 'editCatInput');
 });
 
-// New category — created via fetch so it doesn't reload the page and lose
+// New category, created via fetch so it doesn't reload the page and lose
 // whatever habit the user was already filling in behind it.
 var categorySheetOrigin = 'add';
 document.querySelectorAll('.cat-pill-new').forEach(function(btn) {
@@ -422,7 +422,7 @@ setupPicker('addColorPicker', 'addColorInput', 'color');
 setupPicker('editIconPicker', 'editIconInput', 'icon');
 setupPicker('editColorPicker', 'editColorInput', 'color');
 
-// Edit link → edit sheet
+// Edit link opens the edit sheet
 document.querySelectorAll('.edit-link').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.preventDefault();
@@ -495,7 +495,7 @@ document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) closeDeleteModal();
 });
 
-// Overflow menu — moved onto <body> while open so position:fixed resolves against
+// Overflow menu, moved onto <body> while open so position:fixed resolves against
 // the viewport (a transformed ancestor like .habit-card would otherwise capture it).
 function closeAllMenus() {
     document.querySelectorAll('.overflow-menu.open').forEach(function(m) {
@@ -669,7 +669,7 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
                 return;
             }
 
-            // Button → done state
+            // Switch the button to its done state
             self.classList.add('check-done');
             self.setAttribute('aria-label', 'Completed');
             self.innerHTML = '<i data-lucide="check" aria-hidden="true"></i>';
