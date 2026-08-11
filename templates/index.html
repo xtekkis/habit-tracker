@@ -722,41 +722,77 @@ document.querySelectorAll('.check-btn[data-habit-id]:not([disabled])').forEach(f
 // in one set of listeners. Only the handle (not the whole card) starts a
 // drag, so scrolling the list and the base.html swipe-tab gesture are
 // unaffected everywhere else on the card.
-document.querySelectorAll('.habit-drag-handle').forEach(function(handle) {
-    var card = null;
-    var pointerId = null;
+(function() {
+    var list = document.querySelector('.habit-list');
+    if (!list) return;
 
-    function moveOverSiblings(e) {
-        var list = card.parentElement;
-        var siblings = Array.prototype.filter.call(list.children, function(el) {
-            return el !== card && el.classList.contains('habit-card');
+    var card = null;        // the card currently being dragged
+    var pointerId = null;
+    var grabOffset = 0;     // pointer Y minus the card's top edge, held constant
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function cards() {
+        return Array.prototype.filter.call(list.children, function(el) {
+            return el.classList.contains('habit-card');
         });
-        var insertBefore = null;
-        for (var i = 0; i < siblings.length; i++) {
-            var rect = siblings[i].getBoundingClientRect();
-            if (e.clientY < rect.top + rect.height / 2) {
-                insertBefore = siblings[i];
-                break;
-            }
+    }
+
+    // Glue the card to the pointer. The list keeps reflowing underneath it as
+    // neighbours swap around, so the offset is measured fresh each time
+    // against wherever the DOM currently wants to put the card.
+    function follow(clientY) {
+        card.style.transform = '';
+        var naturalTop = card.getBoundingClientRect().top;
+        card.style.transform =
+            'translateY(' + (clientY - grabOffset - naturalTop) + 'px) scale(1.02)';
+    }
+
+    // Swap the card past any neighbour whose midpoint the pointer has crossed,
+    // then slide those neighbours into their new places instead of letting
+    // them jump: measure before, move, then animate from the old position back
+    // to zero (a FLIP).
+    function maybeReorder(clientY) {
+        var others = cards().filter(function(el) { return el !== card; });
+
+        var before = null;
+        for (var i = 0; i < others.length; i++) {
+            var r = others[i].getBoundingClientRect();
+            if (clientY < r.top + r.height / 2) { before = others[i]; break; }
         }
-        if (insertBefore) {
-            if (insertBefore !== card.nextSibling) list.insertBefore(card, insertBefore);
-        } else if (list.lastElementChild !== card) {
-            list.appendChild(card);
-        }
+        var alreadyThere = before
+            ? before === card.nextElementSibling
+            : list.lastElementChild === card;
+        if (alreadyThere) return;
+
+        var firstTops = others.map(function(el) { return el.getBoundingClientRect().top; });
+
+        if (before) list.insertBefore(card, before);
+        else list.appendChild(card);
+
+        if (reduceMotion) return;
+        others.forEach(function(el, i) {
+            var delta = firstTops[i] - el.getBoundingClientRect().top;
+            if (!delta) return;
+            el.style.transition = 'none';
+            el.style.transform = 'translateY(' + delta + 'px)';
+            void el.offsetHeight;          // flush, so the jump-back actually animates
+            el.style.transition = '';
+            el.style.transform = '';
+        });
     }
 
     function endDrag(e) {
         if (!card || e.pointerId !== pointerId) return;
-        var draggedCard = card;
-        var list = draggedCard.parentElement;
-        draggedCard.classList.remove('dragging');
+        var moved = card;
         card = null;
         pointerId = null;
 
-        var order = Array.prototype.filter.call(list.children, function(el) {
-            return el.classList.contains('habit-card');
-        }).map(function(el) {
+        moved.classList.remove('dragging');
+        moved.style.transform = '';
+        list.classList.remove('reordering');
+        document.body.classList.remove('dragging-active');
+
+        var order = cards().map(function(el) {
             return el.querySelector('.check-btn').dataset.habitId;
         });
 
@@ -778,24 +814,34 @@ document.querySelectorAll('.habit-drag-handle').forEach(function(handle) {
         });
     }
 
-    handle.addEventListener('pointerdown', function(e) {
-        if (e.button !== 0) return;
-        card = handle.closest('.habit-card');
-        if (!card) return;
-        pointerId = e.pointerId;
-        handle.setPointerCapture(pointerId);
-        card.classList.add('dragging');
-        e.preventDefault();
-    });
+    document.querySelectorAll('.habit-drag-handle').forEach(function(handle) {
+        handle.addEventListener('pointerdown', function(e) {
+            if (e.button !== 0) return;
+            var target = handle.closest('.habit-card');
+            if (!target) return;
+            card = target;
+            pointerId = e.pointerId;
+            handle.setPointerCapture(pointerId);
 
-    handle.addEventListener('pointermove', function(e) {
-        if (!card || e.pointerId !== pointerId) return;
-        moveOverSiblings(e);
-    });
+            grabOffset = e.clientY - card.getBoundingClientRect().top;
+            list.classList.add('reordering');
+            document.body.classList.add('dragging-active');
+            card.classList.add('dragging');
+            follow(e.clientY);
+            e.preventDefault();
+        });
 
-    handle.addEventListener('pointerup', endDrag);
-    handle.addEventListener('pointercancel', endDrag);
-});
+        handle.addEventListener('pointermove', function(e) {
+            if (!card || e.pointerId !== pointerId) return;
+            maybeReorder(e.clientY);
+            follow(e.clientY);
+            e.preventDefault();
+        });
+
+        handle.addEventListener('pointerup', endDrag);
+        handle.addEventListener('pointercancel', endDrag);
+    });
+})();
 
 // Auto-open add sheet when navigated from another tab via FAB (?add=1)
 // Deferred with setTimeout so base.html's openSheet/closeSheet are defined first,

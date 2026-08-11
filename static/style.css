@@ -589,8 +589,25 @@ button:active {
 
 .habit-card.dragging {
     box-shadow: var(--shadow-lg);
-    opacity: 0.9;
-    z-index: 10;
+    z-index: 20;
+    cursor: grabbing;
+    /* JS rewrites transform every frame so the card tracks the pointer, so
+       transform must not be transitioned here or it would lag behind. */
+    transition: box-shadow 0.15s ease;
+}
+
+/* .habit-card's entrance animation animates transform with fill-mode both,
+   and a filled animation outranks inline styles in the cascade - it would
+   silently beat the transforms JS sets while dragging. Dropping the
+   animation for the duration of a drag is what lets those apply at all. */
+.habit-list.reordering .habit-card {
+    animation: none;
+}
+
+/* Stops the drag from turning into a text selection across the page. */
+body.dragging-active {
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .habit-drag-handle {
