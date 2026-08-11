@@ -17,6 +17,10 @@ A habit tracker I built with Flask and SQLite. You add the habits you want to ke
 ## What it does
 
 - Check off your habits for the day and keep a running streak going for each one
+- Choose which days of the week each habit repeats on, and streaks only count the days it was actually due
+- Reorder the list by dragging a habit's grip handle, so it reads in whatever order suits your day
+- Fill in a habit you forgot by tapping yesterday on its calendar. It only ever goes one day back, so the numbers stay honest
+- Archive a habit you are finished with. It disappears from your daily list but keeps all its history, and you can restore it from Settings
 - Earn XP every time you log a habit, with a bonus for finishing everything scheduled that day, and level up through ranks from Seed to Evergreen
 - See how you're doing on the Insights page, with a weekly and monthly breakdown
 - Browse any habit's full history on its own calendar, including current and best streaks
@@ -25,7 +29,7 @@ A habit tracker I built with Flask and SQLite. You add the habits you want to ke
 - Set a daily reminder time per habit. These use browser notifications and only fire while the app is open, so if one passes while it's closed you'll see it the next time you open the app
 - Export all your check-ins to CSV whenever you want
 - Install it as an app on your phone or desktop, since it's a PWA that works offline
-- Works nicely on mobile and switches to a two-column layout on wider screens
+- Works nicely on mobile, including swiping left and right to move between tabs, and switches to a two-column layout on wider screens
 
 ## Running it locally
 
