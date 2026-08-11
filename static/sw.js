@@ -4,7 +4,7 @@
 // cached, so an unchanged CACHE_NAME means installed PWA users keep briefly
 // seeing one-version-old assets on every load instead of getting the fresh
 // ones immediately via a real cache reset.
-const CACHE_NAME = 'habit-tracker-v5';
+const CACHE_NAME = 'habit-tracker-v6';
 const STATIC_ASSETS = [
     '/static/style.css',
     '/static/lucide.min.js',

@@ -587,13 +587,19 @@ button:active {
     opacity: 0.75;
 }
 
+/* The card being dragged reads as a lifted, greyed-out copy of the row: the
+   text stays legible, but it is clearly no longer sitting in the list. The
+   shadow is written out rather than using --shadow-lg, which at 10% opacity
+   against a resting card's 7% was a 3% difference and invisible in practice. */
 .habit-card.dragging {
-    box-shadow: var(--shadow-lg);
+    background: var(--bg-tint);
+    opacity: 0.85;
+    box-shadow: 0 18px 40px rgba(67, 43, 30, 0.34);
     z-index: 20;
     cursor: grabbing;
     /* JS rewrites transform every frame so the card tracks the pointer, so
        transform must not be transitioned here or it would lag behind. */
-    transition: box-shadow 0.15s ease;
+    transition: box-shadow 0.15s ease, background 0.15s ease;
 }
 
 /* .habit-card's entrance animation animates transform with fill-mode both,
@@ -604,7 +610,15 @@ button:active {
     animation: none;
 }
 
-/* Stops the drag from turning into a text selection across the page. */
+/* For the whole gesture: hold the grabbing cursor wherever the pointer
+   travels (it otherwise reverts the moment it leaves the small handle, even
+   though the drag is still running), and stop the drag from turning into a
+   text selection across the page. */
+body.dragging-active,
+body.dragging-active * {
+    cursor: grabbing !important;
+}
+
 body.dragging-active {
     user-select: none;
     -webkit-user-select: none;
