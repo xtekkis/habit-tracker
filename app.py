@@ -79,51 +79,73 @@ def set_security_headers(response):
     )
     return response
 
-# In-memory, per-IP rate limiting so a scripted loop can't spam habit
-# creation/editing/logging forever. Keyed by IP rather than the session uid,
-# since a request that sends no cookie at all just gets a fresh uid every
-# time - IP is the one thing that isn't trivially reset on every request.
-# Resets on app restart; fine for a single-process, low-traffic deploy like
-# this one.
+# In-memory rate limiting, in two tiers, so a scripted loop can't spam writes
+# without also blocking real people.
+#
+# Tier 1 is per browser session and per endpoint, with limits set well above
+# normal use. This is the one real users could ever bump into.
+#
+# Tier 2 is a much higher shared budget across every write endpoint, keyed by
+# IP. A request that sends no cookie gets a fresh uid every time, so tier 1
+# alone is trivially bypassed by clearing cookies; the IP budget is the
+# backstop for that. Keying tier 1 by IP instead was the original approach and
+# it was wrong: everyone behind one router or mobile carrier NAT shared a
+# single allowance, so one person adding 10 habits locked out everybody else
+# on that network, and one person adding 11 habits in a sitting locked out
+# themselves.
+#
+# Both reset on app restart; fine for a single-process, low-traffic deploy.
 _rate_limit_hits = defaultdict(list)
 _rate_limit_calls_since_sweep = 0
 _RATE_LIMIT_SWEEP_EVERY = 100
 _RATE_LIMIT_SWEEP_MAX_AGE = 3600  # comfortably above any window_seconds in use below
+_IP_BUDGET = 300                  # writes per IP per window, across all endpoints
+_IP_BUDGET_WINDOW = 600
 
 def _sweep_rate_limit_hits(now):
-    # A key (ip, endpoint) is never removed just because that IP stops
-    # showing up, so without this the dict grows by one entry per distinct
-    # IP/endpoint pair ever seen, for the life of the process. Runs
+    # A key is never removed just because that session or IP stops showing
+    # up, so without this the dict grows by one entry per distinct
+    # session/endpoint and IP ever seen, for the life of the process. Runs
     # periodically rather than every call, since it walks every key.
     cutoff = now - _RATE_LIMIT_SWEEP_MAX_AGE
     stale_keys = [key for key, hits in _rate_limit_hits.items() if not any(t >= cutoff for t in hits)]
     for key in stale_keys:
         del _rate_limit_hits[key]
 
-def rate_limit(limit=10, window_seconds=600):
+def _over_limit(key, limit, window_seconds, now):
+    cutoff = now - window_seconds
+    hits = [t for t in _rate_limit_hits[key] if t >= cutoff]
+    _rate_limit_hits[key] = hits
+    return len(hits) >= limit
+
+def rate_limit(limit=30, window_seconds=600):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
             global _rate_limit_calls_since_sweep
-            key = (request.remote_addr, f.__name__)
             now = time.time()
-            cutoff = now - window_seconds
-            hits = [t for t in _rate_limit_hits[key] if t >= cutoff]
 
             _rate_limit_calls_since_sweep += 1
             if _rate_limit_calls_since_sweep >= _RATE_LIMIT_SWEEP_EVERY:
                 _rate_limit_calls_since_sweep = 0
                 _sweep_rate_limit_hits(now)
 
-            if len(hits) >= limit:
-                _rate_limit_hits[key] = hits
+            session_key = ("s", session.get("uid"), f.__name__)
+            ip_key = ("ip", request.remote_addr)
+
+            if (_over_limit(session_key, limit, window_seconds, now)
+                    or _over_limit(ip_key, _IP_BUDGET, _IP_BUDGET_WINDOW, now)):
                 error = "Too many requests. Try again in a few minutes."
-                if request.headers.get("X-Requested-With") == "fetch":
-                    return jsonify({"ok": False, "error": error}), 429
+                # request.is_json covers the reorder endpoint, which posts a
+                # JSON body without the X-Requested-With header the other
+                # fetch callers send.
+                if request.headers.get("X-Requested-With") == "fetch" or request.is_json:
+                    return jsonify({"ok": False, "done": False, "error": error}), 429
                 flash(error, "error")
                 return redirect(url_for("index"))
-            hits.append(now)
-            _rate_limit_hits[key] = hits
+
+            _rate_limit_hits[session_key].append(now)
+            _rate_limit_hits[ip_key].append(now)
             return f(*args, **kwargs)
         return wrapped
     return decorator
@@ -328,7 +350,7 @@ def unarchive_habit(habit_id):
     return redirect(url_for("settings"))
 
 @app.route("/habits/reorder", methods=["POST"])
-@rate_limit()
+@rate_limit(limit=60)  # one call per drag-and-drop drop, so reordering a list runs through these fast
 def reorder():
     owner = session["uid"]
     body = request.get_json(silent=True) or {}
@@ -470,6 +492,7 @@ def add_category():
     return redirect(url_for("index"))
 
 @app.route("/category/delete/<int:category_id>", methods=["POST"])
+@rate_limit()
 def delete_category(category_id):
     owner = session["uid"]
     with db_connection() as conn:
@@ -504,6 +527,7 @@ def settings():
     return render_template("settings.html", categories=categories, prefs=prefs, archived_habits=archived_habits)
 
 @app.route("/preferences/toggle-streaks", methods=["POST"])
+@rate_limit()
 def toggle_streaks():
     owner = session["uid"]
     prefs = get_preferences(owner)
@@ -512,6 +536,7 @@ def toggle_streaks():
     return redirect(url_for("settings"))
 
 @app.route("/preferences/start-week", methods=["POST"])
+@rate_limit()
 def set_start_week():
     value = request.form.get("value")
     if value in ("monday", "sunday"):
@@ -519,6 +544,7 @@ def set_start_week():
     return redirect(url_for("settings"))
 
 @app.route("/reset", methods=["POST"])
+@rate_limit(limit=5)  # destructive and wipes everything, so far tighter than the rest
 def reset_all():
     owner = session["uid"]
     with db_connection() as conn:
@@ -676,7 +702,7 @@ def export_csv():
     )
 
 @app.route("/log/<int:habit_id>", methods=["POST"])
-@rate_limit(limit=60, window_seconds=600)  # higher than other routes - checking off a long habit list in one sitting is normal use, not abuse
+@rate_limit(limit=90)  # highest of any route - checking off a long habit list every day is normal use, not abuse
 def log_habit(habit_id):
     owner = session["uid"]
     today = get_local_today()
